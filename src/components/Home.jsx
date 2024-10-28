@@ -17,12 +17,15 @@ const Home = () => {
 
     const [cookies, setCookie, removeCookie] = useCookies(['uid']);
 
-    const {userDataSwip , setUserDataSwip , setMeetDataSwip} = useContext(DataContext)
+    const {userDataSwip , setUserDataSwip , setMeetDataSwip, setUserMeetCodeSwip} = useContext(DataContext)
 
     const [meetDataState,setMeetDataState] = useState([]);
 
     useEffect(() => {
             console.log("userDataSwip",userDataSwip)
+            if(userDataSwip){
+                setUserMeetCodeSwip(userDataSwip.meetCode)
+            }
     }, [userDataSwip])
 
     const getUserInfo = async () => {

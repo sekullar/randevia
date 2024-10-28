@@ -19,8 +19,12 @@ const Header = () => {
         navigate("/home")
     }
 
+    const forwardAccountSettings = () => {
+        navigate("/accountSettings")
+    }
+
     const isCreateMeetPage = location.pathname === '/createMeet';
-    const buttonText = isCreateMeetPage ? 'Toplantı Oluştur' : 'Toplantılarınız';
+    const buttonText = isCreateMeetPage ? 'Toplantı Oluştur' : location.pathname === "/accountSettings" ? "Hesap Ayarları" : "Toplantılarınız";
 
     
 
@@ -41,7 +45,7 @@ const Header = () => {
                         :
                         null
                     }
-                    <img src={Account} className="invert w-[50px]" alt="Account" />
+                    <img src={Account} className="invert w-[50px] cursor-pointer" onClick={() => forwardAccountSettings()} alt="Account" />
                 </div>
             </div>
         </>

@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import Main from "./components/Main";
 import "./css/main.css";
 import toast, { Toaster } from "react-hot-toast";
-import { DataProvider } from "./components/Context/MainContext"; // DataProvider'ı kullanıyoruz
+import { DataProvider } from "./components/Context/MainContext"; 
+
 
 function App() {
+
   return (
     <>
       <DataProvider>
