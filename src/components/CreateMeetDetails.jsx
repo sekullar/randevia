@@ -5,12 +5,13 @@ import { db } from "../firebase/firebase";
 import Copy from "../images/lets-icons--copy-light.svg";
 import toast from "react-hot-toast";
 import DatePicker from "react-datepicker"; 
-import DateIcon from "../images/lets-icons--date-range.svg";
-import "react-datepicker/dist/react-datepicker.css";
+import { tr } from 'date-fns/locale'; 
 import "../css/datepickerMore.css";
 import { useCookies } from "react-cookie";
 import Select from 'react-select';
-import Plus from "../images/ic--round-plus.svg";
+import MeetingPng from "../images/toplanti.png"
+import Modal from 'react-modal';
+import Close from "../images/mingcute--close-fill.svg"
 import "../css/loader.css"
 import "../css/createMeet.css"
 
@@ -28,9 +29,29 @@ const CreateMeetDetails = () => {
     const [isFileUploaded, setIsFileUploaded] = useState(false); 
     const [loading,setLoading] = useState(false);
     const [uniqueState,setUniqueState] = useState("");
+    const [meetPrivate,setMeetPrivate] = useState(false)
+    const [modalOpen,setModalOpen] = useState(false);
+
+
+    const [excludingDate,setExcludingDate] = useState(null);
+    const [excludingTime,setExcludingTime] = useState(null);
+    const [excludingCount,setExcludingCount] = useState(0);
 
     const [cookies, setCookie, removeCookie] = useCookies(['uid']);
 
+    const customStyles = {
+        content: {
+          top: '50%',
+          left: '50%',
+          right: 'auto',
+          bottom: 'auto',
+          marginRight: '-50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: "8px",
+          overflow: "hidden",
+          height: "300px"
+        },
+    };
 
     const getCurrentUnixTimestamp = () => {
         const now = new Date();
@@ -52,10 +73,10 @@ const CreateMeetDetails = () => {
             if (userDoc.exists()) {
                 const existingMeetCodes = userDoc.data().meetCode; 
 
-                const updatedMeetCodes = existingMeetCodes ? `${existingMeetCodes},${uniqueState}` : uniqueState;
+                const updatedMeetCodes = existingMeetCodes ? `${existingMeetCodes},allShow-${uniqueState}` : `allShow-${uniqueState}`;
 
                 await updateDoc(userDocRef, {
-                    meetCode: updatedMeetCodes // Yeni değeri kaydet
+                    meetCode: updatedMeetCodes 
                 });
 
                 console.log("Meet code başarıyla güncellendi:", updatedMeetCodes);
@@ -69,10 +90,9 @@ const CreateMeetDetails = () => {
 
     const uploadFileToFirebase = async () => {
         if (!selectedFile) {
-            toast.error("Lütfen bir dosya seçin!");
-            return;
+            return MeetingPng;  
         }
-
+    
         const storage = getStorage();
         const storageRef = ref(storage, `files/${selectedFile.name}`);
         try {
@@ -86,24 +106,36 @@ const CreateMeetDetails = () => {
             toast.error("Dosya yüklenirken bir hata oluştu.");
         }
     };
+    
 
     const createMeetFunc = async () => {
         try {
-            setLoading(true)
+            if (excludingCount == 0 && excludingDate == null && excludingTime == null) {
+                setExcludingDate("no-excluding");
+                setExcludingTime("no-excluding");
+                setExcludingCount("no-excluding");
+            }
+            setLoading(true);
             const fileURL = await uploadFileToFirebase();
             AddSelfCode();
-            const docRef = await addDoc(collection(db, "meets"), {
+            
+            const docRef = await setDoc(doc(db, "meets", uniqueState), {
                 meetTitle: title,
                 meetDesc: desc,
                 meetCreatedAt: getCurrentUnixTimestamp(),
-                meetCode: uniqueState,
+                meetCode: !meetPrivate ? uniqueState : `allShow-${uniqueState}`,
                 meetStartDate: meetStart,
                 meetEndDate: meetEnd,
                 meetTimeStart: timeStart,
                 meetTimeEnd: timeEnd,
-                fileUrl: fileURL 
+                fileUrl: fileURL,
+                excludingCount: `${excludingCount}==FOR==${excludingTime}`,
+                excludingDate: `${excludingDate}==FOR==${excludingTime}`,
+                excludingTime: excludingTime,
+                excludingFillCount: `0/${excludingCount}==FOR==${excludingTime}`
             });
-            setLoading(false)
+            
+            setLoading(false);
             toast.success("Toplantı başarıyla oluşturuldu!");
         } catch (error) {
             toast.error("Toplantı oluşturulurken bir hata oluştu.");
@@ -111,6 +143,7 @@ const CreateMeetDetails = () => {
             setLoading(false);
         }
     };
+    
 
     const generateRandomCode = (length = 12) => {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -181,7 +214,25 @@ const CreateMeetDetails = () => {
    
 
     return (
-        <>
+        <>     
+            <Modal style={customStyles} isOpen={modalOpen}>
+                <div className="flex justify-end">
+                    <img src={Close} className="w-[35px]" onClick={() => setModalOpen(!modalOpen)} alt="Close" />
+                </div>
+                <p className="inter-400 text-2xl my-5">Kısıtlama ekle</p>
+                <div className="flex items-center gap-2">
+                    <DatePicker selected={excludingDate} locale={tr} onChange={(date) => setExcludingDate(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2 border"/>
+                    <p className="inter-400">tarihindeki</p>
+                    <Select 
+                        options={options}
+                        onChange={(option) => setExcludingTime(option.value)}
+                        className="rounded-lg border outline-0 mt-2"
+                    />
+                    <p className="inter-400">saati için</p>
+                    <input type="text" className="w-[120px] border p-1 rounded-lg" value={excludingCount} onChange={(e) => setExcludingCount(e.target.value)} placeholder="Kaç kere?"/>
+                    <p>kere randevu yapılabilinir.</p>
+                </div>
+            </Modal>
             <div className={`${loading ? "h-screen w-screen fixed justify-center flex items-center bg-special-white z-50" : "hidden"}`}>
                 <div className="loader"></div>
             </div>
@@ -207,13 +258,26 @@ const CreateMeetDetails = () => {
 
                         <input id="fileInput" type="file" className="hidden" onChange={handleFileChange} />
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <p className="inter-400">Toplantınızın kodu:</p>
-                        <div className="flex ">
-                            <input type="text" onChange={(e) => setMeetCodeState(e.target.value)} value={uniqueState} className="inter-400 outline-0 p-1 px-2 rounded-lg max-h-[350px]" placeholder="Toplantı kodu"/>
-                            <img src={Copy} onClick={handleCopy} className="invert w-[35px] cursor-pointer" alt="Copy" />
+                    <div className="flex items-center">
+                        <div onClick={() => setMeetPrivate(true)} className={`${meetPrivate ? "bg-sky-500 p-5 w-[150px] flex justify-center rounded-s-lg" : "bg-gray-100 p-5 w-[150px] transition-all  flex justify-center rounded-s-lg cursor-pointer text-black"}`}>
+                            <span className={`${meetPrivate ? "text-white inter-500" : "text-black inter-600"} cursor-pointer `}>Herkese açık</span>
+                        </div>
+                        <div onClick={() => setMeetPrivate(false)} className={` ${!meetPrivate ? "bg-sky-500" : "bg-gray-100"}  p-5 w-[150px] flex justify-center transition-all  cursor-pointer rounded-e-lg`}>
+                            <span className={`${!meetPrivate ? "text-white inter-500" : "text-black inter-600"} cursor-pointer `}>Özel</span>
                         </div>
                     </div>
+                    {
+                        meetPrivate !== true ?  
+                        <div className="flex flex-col gap-2">
+                            <p className="inter-400">Toplantınızın kodu:</p>
+                            <div className="flex ">
+                                <input type="text" onChange={(e) => setMeetCodeState(e.target.value)} value={uniqueState} className="inter-400 outline-0 p-1 px-2 rounded-lg max-h-[350px]" placeholder="Toplantı kodu"/>
+                                <img src={Copy} onClick={handleCopy} className="invert w-[35px] cursor-pointer" alt="Copy" />
+                            </div>
+                        </div>
+                        :
+                        ""
+                    }
                 </div>
                 <div className="flex items-center">
                     <div className="flex flex-col mt-10 px-24">
@@ -222,16 +286,14 @@ const CreateMeetDetails = () => {
                             <div className="flex items-center gap-12">
                                 <div className="flex flex-col mt-16">
                                     <p className="inter-500">Başlangıç Tarihi:</p>
-                                    <div className="border flex items-center rounded-lg my-4 mt-2 w-[250px]">
-                                        <DatePicker selected={meetStart} onChange={(date) => setMeetStart(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2"/>
-                                        <img src={DateIcon} className="h-6 w-6 cursor-pointer" alt="date"/>
+                                    <div className="border flex items-center flex-col  rounded-lg my-4 createDatepicker mt-2 h-[45px] w-[250px]">
+                                        <DatePicker selected={meetStart} locale={tr} onChange={(date) => setMeetStart(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2"/>
                                     </div>
                                 </div>
                                 <div className="flex flex-col mt-16">
                                     <p className="inter-500">Bitiş Tarihi:</p>
-                                    <div className="border flex items-center rounded-lg my-4 mt-2 w-[250px]">
-                                        <DatePicker selected={meetEnd} onChange={(date) => setMeetEnd(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2"/>
-                                        <img src={DateIcon} className="h-6 w-6 cursor-pointer" alt="date"/>
+                                    <div className="border flex items-center flex-col rounded-lg my-4 createDatepicker mt-2 h-[45px] w-[250px]">
+                                        <DatePicker selected={meetEnd} locale={tr} onChange={(date) => setMeetEnd(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2"/>
                                     </div>
                                 </div>
                             </div>
@@ -253,12 +315,13 @@ const CreateMeetDetails = () => {
                                     />
                                 </div>
                             </div>
+                            <button className="bg-sky-500 hover:bg-sky-600 rounded-lg text-white inter-500 px-4 py-2 transition-all duration-300 outline-0" onClick={() => setModalOpen(!modalOpen)}>Kısıtlama ekle</button>
                         </div>
                     </div>
                 </div>
             </div>
             <div className="flex justify-center">
-                <button onClick={createMeetFunc} className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 rounded-lg absolute bottom-0 text-white inter-500 px-4 py-2 mt-6">Toplantı Oluştur</button>
+                <button onClick={() => createMeetFunc()} className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 rounded-lg absolute bottom-0 text-white inter-500 px-4 py-2 mb-5">Toplantı Oluştur</button>
             </div>
         </>
     );

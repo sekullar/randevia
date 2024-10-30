@@ -24,7 +24,7 @@ const Header = () => {
     }
 
     const isCreateMeetPage = location.pathname === '/createMeet';
-    const buttonText = isCreateMeetPage ? 'Toplantı Oluştur' : location.pathname === "/accountSettings" ? "Hesap Ayarları" : "Toplantılarınız";
+    const buttonText = isCreateMeetPage ? 'Toplantı Oluştur' : location.pathname === "/accountSettings" ? "Hesap Ayarları" : location.pathname === "/joinMeet" ?  "Randevu Oluştur" : "Toplantılarınız";
 
     
 

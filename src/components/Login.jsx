@@ -29,12 +29,6 @@ const Login = () => {
 
     const [loginSeen,setLoginSeen] = useState(false);
 
-    const currentRole = meetCreatorCheck ? "MeetCreator" : "Member";
-
-    useEffect(() => {
-        console.log(currentRole)
-    }, [currentRole])
-
     const sendRegister = async (e) => {
         const inOneYear = new Date();
         inOneYear.setFullYear(inOneYear.getFullYear() + 1); 
@@ -46,7 +40,7 @@ const Login = () => {
         else{
             try{
                 
-                const user = await register(registerEmail,registerPassword, registerUsername, currentRole, "no-meetcode")
+                const user = await register(registerEmail,registerPassword, registerUsername, "Member", "no-meetcode")
                 if(user){
                     console.log(user)
                     setCookie("uid", user.uid,{path: "/", expires: inOneYear})
@@ -140,17 +134,6 @@ const Login = () => {
                                 <div className="flex flex-col">
                                     <p className="inter-500 text-sm mb-2">Parola Tekrardan:</p>
                                     <input type={`${seenOk ? "hidePassword" : "password"}`} onKeyDown={handleKeyEnterRegister} value={registerPasswordCheck} onChange={(e) => setRegisterPasswordCheck(e.target.value)} className="border p-2 rounded-lg outline-0 w-[300px]" placeholder="Parola tekrarı"/>
-                                </div>
-                                <div className="flex flex-col">
-                                    <p className="inter-500 text-md text-center mb-3">Toplantıyı ...</p>
-                                    <div className="flex items-center">
-                                        <div onClick={() => setMeetCreatorCheck(true)} className={`${meetCreatorCheck ? "bg-sky-500 p-5 w-[150px] flex justify-center rounded-s-lg" : "bg-gray-100 p-5 w-[150px] transition-all  flex justify-center rounded-s-lg cursor-pointer text-black"}`}>
-                                            <span className={`${meetCreatorCheck ? "text-white inter-500" : "text-black inter-600"} cursor-pointer `}>Oluşturacağım</span>
-                                        </div>
-                                        <div onClick={() => setMeetCreatorCheck(false)} className={` ${!meetCreatorCheck ? "bg-sky-500" : "bg-gray-100"}  p-5 w-[150px] flex justify-center transition-all  cursor-pointer rounded-e-lg`}>
-                                            <span className={`${!meetCreatorCheck ? "text-white inter-500" : "text-black inter-600"} cursor-pointer `}>Katılacağım</span>
-                                        </div>
-                                    </div>
                                 </div>
                                 {meetCreatorCheck ? 
                                 ""

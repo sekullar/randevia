@@ -1,0 +1,34 @@
+.joinMeetDatePicker .react-datepicker__tab-loop .react-datepicker-popper{
+    position: relative !important;
+    transform: translate(0,0) !important;
+}
+
+ .joinMeetDatePicker .react-datepicker-wrapper{
+    display: none !important;
+}
+
+.joinMeetDatePicker .react-datepicker__tab-loop div .react-datepicker .react-datepicker__month-container .react-datepicker__month .react-datepicker__week .react-datepicker__day{
+    width: calc(100vw - 92vw);
+    font-family: "Inter",sans-serif;
+    font-weight: 500;
+}
+
+.joinMeetDatePicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__header{
+    background-color: transparent;
+    border-color: transparent;
+}
+
+
+
+.joinMeetDatePicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__header .react-datepicker__day-names .react-datepicker__day-name{
+    width: calc(100vw - 92vw);
+}
+
+.react-datepicker__day--keyboard-selected{
+    background-color: rgb(14 165 233);
+    color: white;
+}
+
+.react-datepicker__day--keyboard-selected:not([aria-disabled=true]):hover{
+    background-color: rgb(2 132 199);
+}

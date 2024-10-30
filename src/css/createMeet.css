@@ -5,3 +5,14 @@
 .bg-special-white{
     background-color: rgba(255, 255, 255, 0.7);
 }
+
+.createDatepicker .react-datepicker__tab-loop .react-datepicker-popper{
+    position: relative !important;
+    transform: translate(0px,0px) !important;
+    top: 0px !important;
+}
+
+.createDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__header{
+    background-color: transparent !important;
+    border-color: transparent;
+}

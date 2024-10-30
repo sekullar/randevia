@@ -1,3 +1,7 @@
 .homeModalHeight{
     height: calc(100vh - 100px);
 }
+
+.react-datepicker-popper{
+    top: calc(100% - 50%) !important;
+}
