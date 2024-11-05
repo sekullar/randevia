@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { getFirestore, collection, getDocs,doc, updateDoc, deleteDoc,arrayUnion } from 'firebase/firestore';
 import { getAuth,deleteUser as authDeleteUser} from "firebase/auth";
 import {db,resetPassword, auth} from "../firebase/firebase"
@@ -9,6 +9,7 @@ import "../css/loader.css"
 import DeleteImg from "../images/ic--outline-delete.svg"
 import Account from "../images/mdi--account.svg"
 import Modal from 'react-modal';
+import zIndex from "@mui/material/styles/zIndex";
 
 
 
@@ -16,8 +17,32 @@ const AdminOperations = () => {
 
     const [userOperationsModal,setUserOperationsModal] = useState(false);
     const [userInfoModal,setUserInfoModal] = useState(false);
+    const [meetInfoModal,setMeetInfoModal] = useState(false);
     const [loading,setLoading] = useState(false);
     const [usersData,setUsersData] = useState();
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm2,setSearchTerm2] = useState("");
+    const [filteredUsers, setFilteredUsers] = useState(usersData || []);
+    const [meetDataState,setMeetDataState] = useState();
+    const [filteredMeets,setFilteredMeets] = useState(meetDataState || [])
+    const [meetSettingsModal,setMeetSettingsModal] = useState(false);
+
+    const [excludingCountState, setExcludingCountState] = useState("");
+    const [excludingDateState, setExcludingDateState] = useState("");
+    const [excludingTimeState, setExcludingTimeState] = useState("");
+    const [excludingFillCountState, setExcludingFillCountState] = useState("");
+    const [fileUrlState, setFileUrlState] = useState("");
+    const [meetIdState, setMeetIdState] = useState("");
+    const [meetCodeState, setMeetCodeState] = useState("");
+    const [meetCreatedAtState, setMeetCreatedAtState] = useState("");
+    const [meetDescState, setMeetDescState] = useState("");
+    const [meetStartDateState, setMeetStartDateState] = useState("");
+    const [meetEndDateState, setMeetEndDateState] = useState("");
+    const [meetTimeStartState, setMeetTimeStartState] = useState("");
+    const [meetTimeEndState, setMeetTimeEndState] = useState("");
+    const [meetTitleState, setMeetTitleState] = useState("");
+
+
 
     const [newMeetCode,setNewMeetCode] = useState("");
 
@@ -26,12 +51,57 @@ const AdminOperations = () => {
     const [userId,setUserId] = useState("");
     const [userMeetCode,setUserMeetCode] = useState("");
 
+    useEffect(() => {
+        if(usersData){
+            setFilteredUsers(usersData);
+        }
+    }, [usersData])
+    
+    const collectMeetData = (countParam,dateParam,timeParam,fillCountParam,fileUrl,id,code,createdAt,desc,startDate,endDate,timeStart,timeEnd,title) => {
+        setExcludingCountState(countParam);
+        setExcludingDateState(dateParam);
+        setExcludingTimeState(timeParam);
+        setExcludingFillCountState(fillCountParam);
+        setFileUrlState(fileUrl);
+        setMeetIdState(id);
+        setMeetCodeState(code);
+        setMeetCreatedAtState(createdAt);
+        setMeetDescState(desc);
+        setMeetStartDateState(startDate);
+        setMeetEndDateState(endDate);
+        setMeetTimeStartState(timeStart);
+        setMeetTimeEndState(timeEnd);
+        setMeetTitleState(title);
+    }
+
     const collectUserData = (usernameParam,emailParam,userIdParam,userMeetCodeParam) => {
         setUsername(usernameParam)
         setEmail(emailParam)
         setUserId(userIdParam)
         setUserMeetCode(userMeetCodeParam)
     }
+
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm(term);
+        const results = usersData.filter(user => 
+            user.username && user.username.toLowerCase().includes(term)
+        );
+        
+        setFilteredUsers(results);
+    };
+
+    const handleSearchMeet = (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm2(term);
+        const results = meetDataState.filter(meet => 
+            meet.meetCode && meet.meetCode.toLowerCase().includes(term)
+        );
+        
+        setFilteredMeets(results);
+    };
+    
+    
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -48,6 +118,24 @@ const AdminOperations = () => {
           return []; 
         }
       };
+
+      const fetchMeets = async () => {
+        setLoading(true);
+        const meetRef = collection(db,"meets");
+        try{
+            const snapshot = await getDocs(meetRef);
+            const meetList = snapshot.docs.map(doc => ({id:doc.id, ...doc.data() }));
+            setMeetDataState(meetList);
+            setFilteredMeets(meetList); 
+            console.log(meetList);
+            setLoading(false);
+        }
+        catch(error){
+            toast.error("Toplantı verileri çekilirken hata oluştu!");
+            console.error(error);
+        }
+    };
+    
 
       const updateMeetCode = async (userId) => {
         try {
@@ -90,7 +178,22 @@ const AdminOperations = () => {
           marginRight: '-50%',
           transform: 'translate(-50%, -50%)',
           borderRadius: "8px",
-          overflow: "hidden"        
+          overflow: "hidden",
+          zIndex: "49"
+        },
+      };
+
+      const customStyles2 = {
+        content: {
+          top: '50%',
+          left: '50%',
+          right: 'auto',
+          bottom: 'auto',
+          marginRight: '-50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: "8px",
+          overflow: "hidden",
+          zIndex: "50"    
         },
       };
 
@@ -130,12 +233,52 @@ const AdminOperations = () => {
             <div className={`${loading ? "h-screen w-screen fixed justify-center flex items-center bg-special-white z-40" : "hidden"}`}>
                 <div className="loader"></div>
             </div>
+            <Modal style={customStyles2} isOpen={meetSettingsModal}>
+                <div className="flex justify-end">
+                    <img src={Close} className="w-[35px]" onClick={() => {setMeetSettingsModal(!meetSettingsModal); setMeetInfoModal(!meetInfoModal)}} alt="Close" />
+                </div>
+                <div className="flex flex-col">
+                    <div className="flex items-center">
+                        <img src={fileUrlState} className="w-[120px]"  alt="Meet Photo" />
+                        <div className="flex flex-col ms-4">
+                            <p className="inter-400 text-2xl">{meetTitleState}</p>
+                            <p className="inter-400 text-xl">{meetDescState}</p>
+                            <p className="inter-400 text-lg">{meetCodeState}</p>
+                        </div>
+                    </div>
+                    <p className="inter-500 text-2xl mt-8 mb-2">Kısıtlamalar</p>
+                    <div className="flex flex-col border p-2 rounded-lg">
+                        <p className="inter-400">Birden fazla randevu verilen saat kaç? : <span className="inter-500">{excludingTimeState}</span></p>
+                        <p className="inter-400">Belirli saatler için verilen randevu hakları : <span className="inter-500">{excludingFillCountState}</span></p>
+                    </div>
+                </div>
+            </Modal>
+            <Modal style={customStyles} isOpen={meetInfoModal}>
+                <div className="flex justify-end">
+                    <img src={Close} className="w-[35px]" onClick={() => setMeetInfoModal(!meetInfoModal)} alt="Close" />
+                </div>
+                <input type="text" value={searchTerm2} onChange={(e) => handleSearchMeet(e)} className="my-2 outline-0 border p-1 rounded-lg w-full" placeholder="Toplantı kodu girin..."/>
+                <div className="flex flex-col justify-center gap-3 items-start w-[350px] mt-2 border rounded-lg p-2 pb-0 max-h-[500px] overflow-auto">
+                    {filteredMeets && filteredMeets.map((meet,key) => {
+                        return(
+                            <div key={key} className="flex items-center justify-between w-full border-b pb-3">
+                                <div className="flex items-center">
+                                    <img src={meet.fileUrl} className="w-[35px] me-2" alt="User" />
+                                    <p>{meet.meetCode}</p>
+                                </div>
+                                <button className="bg-sky-500 hover:bg-sky-600 outline-0 transition-all duration-300 inter-500 px-4 py-2 rounded-lg text-white" onClick={() => {setMeetSettingsModal(!meetSettingsModal); setMeetInfoModal(!meetInfoModal); collectMeetData(meet.excludingCount,meet.excludingDate,meet.excludingTime,meet.excludingFillCount,meet.fileUrl,meet.id,meet.meetCode,meet.meetCreatedAt,meet.meetDesc,meet.meetStartDate,meet.meetEndDate,meet.meetTimeStart,meet.meetTimeEnd,meet.meetTitle)}}>...</button>
+                            </div>
+                        )
+                    })}
+                </div>
+            </Modal>
             <Modal style={customStyles} isOpen={userOperationsModal}>
                 <div className="flex justify-end">
                     <img src={Close} className="w-[35px]" onClick={() => setUserOperationsModal(!userOperationsModal)} alt="Close" />
                 </div>
-                <div className="flex flex-col justify-center gap-3 items-start w-[350px] mt-4 border rounded-lg p-2 max-h-[500px] overflow-auto">
-                    {usersData && usersData.map((user,key) => {
+                <input type="text" value={searchTerm} onChange={(e) => handleSearch(e)} placeholder="Kullanıcı adı girin..."  className="my-2 outline-0 border p-1 rounded-lg mb-1 w-full"/>
+                <div className="flex flex-col justify-center gap-3 items-start w-[350px] mt-2 border rounded-lg p-2 pb-0 max-h-[500px] overflow-auto">
+                    {filteredUsers && filteredUsers.map((user,key) => {
                         return(
                             <div key={key} className="flex items-center justify-between w-full border-b pb-3">
                                 <div className="flex items-center">
@@ -192,7 +335,7 @@ const AdminOperations = () => {
             <Header />
             <div className="flex justify-center gap-2 mt-3">
                 <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 outline-0 rounded-lg px-4 py-2 text-white inter-500" onClick={() => {setUserOperationsModal(true); fetchUsers()}}>Üye işlemleri</button>
-                <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 outline-0 rounded-lg px-4 py-2 text-white inter-500">Toplantı işlemleri</button>
+                <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 outline-0 rounded-lg px-4 py-2 text-white inter-500" onClick={() => {setMeetInfoModal(!meetInfoModal); fetchMeets();}}>Toplantı işlemleri</button>
             </div>
         </>
     )

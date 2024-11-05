@@ -6,7 +6,11 @@ import Modal from 'react-modal';
 import CloseImg from "../../images/mingcute--close-fill.svg"
 import "../../css/homeModal.css"
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import LastMeet from "./LastMeet";
+import { doc, deleteDoc } from "firebase/firestore"; 
+import { db } from '../../firebase/firebase'; 
+
 
 
 
@@ -60,6 +64,21 @@ const Article = () => {
         }
     }, [userDataSwip, meetDataSwip]); 
 
+
+    const deleteMeet = async (meetCode) => {
+        try{
+            toast.loading("Yükleniyor...")
+            const docRef = doc(db,"meets",meetCode)
+            await deleteDoc(docRef);
+            toast.dismiss();
+            toast.success("Toplantı başarıyla silindi");
+        }
+        catch(error){
+            toast.error("Toplantı silinirken bir hata oluştu");
+            console.error(error);
+        }
+    }
+
     const generateRandomCode = (length = 12) => {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
@@ -80,7 +99,7 @@ const Article = () => {
         <Modal style={customStyles} isOpen={settingsModal}>
             <div className="flex flex-col relative p-2">
                 <img src={CloseImg} alt="Close" onClick={() => setSettingsModal(!settingsModal)} className="absolute cursor-pointer top-0 end-0 w-[35px]"/>
-                <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-12 inter-500">Toplantıyı sil (İşlevsiz)</button>
+                <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-12 inter-500" onClick={() => {deleteMeet(moveMeetCode); setSettingsModal(!settingsModal) }}>Toplantıyı sil</button>
                 <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-2 inter-500" onClick={() => navigate("/listUsers")}>Toplantı listesini görüntüle</button>
             </div>
         </Modal>
