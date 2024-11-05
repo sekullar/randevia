@@ -164,7 +164,7 @@ const Article = () => {
                                 >
                                     Toplantıya Katıl
                                 </button>
-                                {userDataSwip.role == "MeetCreator" &&
+                                {userDataSwip.role == "meetCreator" &&
                                 <div>
                                     <button 
                                         onClick={() => {setSettingsModal(!settingsModal); setMoveMeetCode(meet.meetCode)}} 
@@ -191,7 +191,7 @@ const Article = () => {
         </div>
         {/* <LastMeet /> */}
         <div className="flex items-center p-4">
-        {userDataSwip && userDataSwip.role === "MeetCreator" ? 
+        {userDataSwip && userDataSwip.role === "meetCreator" ? 
             <div className="flex flex-col gap-4 bg-sky-500 p-5 rounded-xl mx-12 text-white">
                 <p className="inter-400 text-4xl">Randevia'ya Hoşgeldiniz! 🎉</p>
                 <p className="inter-400 text-lg">

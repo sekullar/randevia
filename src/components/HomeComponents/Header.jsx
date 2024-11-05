@@ -38,7 +38,7 @@ const Header = () => {
                 </div>
                 <p className="inter-500 text-3xl">{buttonText}</p>
                 <div className="flex items-center justify-end gap-3 w-[215px]">
-                    {userDataSwip && userDataSwip.role === "MeetCreator" ? 
+                    {userDataSwip && userDataSwip.role === "meetCreator" ? 
                         <div>
                             <button onClick={forwardCreateMeet} className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 rounded-lg inter-500 text-white px-4 py-2 cursor-pointer select-none">Toplantı Oluştur</button>
                         </div>

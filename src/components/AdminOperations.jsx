@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { getFirestore, collection, getDocs,doc, updateDoc, deleteDoc,arrayUnion } from 'firebase/firestore';
+import { useEffect, useState, useContext } from "react"
+import { getFirestore, collection, getDocs,doc, updateDoc, deleteDoc,arrayUnion,query, where,getDoc } from 'firebase/firestore';
 import { getAuth,deleteUser as authDeleteUser} from "firebase/auth";
 import {db,resetPassword, auth} from "../firebase/firebase"
 import Header from "./HomeComponents/Header"
@@ -9,8 +9,8 @@ import "../css/loader.css"
 import DeleteImg from "../images/ic--outline-delete.svg"
 import Account from "../images/mdi--account.svg"
 import Modal from 'react-modal';
-import zIndex from "@mui/material/styles/zIndex";
-
+import { DataContext } from "./Context/MainContext";
+import { useNavigate } from "react-router-dom";
 
 
 const AdminOperations = () => {
@@ -26,6 +26,11 @@ const AdminOperations = () => {
     const [meetDataState,setMeetDataState] = useState();
     const [filteredMeets,setFilteredMeets] = useState(meetDataState || [])
     const [meetSettingsModal,setMeetSettingsModal] = useState(false);
+    const [userRole,setUserRole] = useState("");
+    const [roleSender,setRoleSender] = useState("");
+    const {moveMeetCode,setMoveMeetCode} = useContext(DataContext)
+    const navigate = useNavigate("");
+
 
     const [excludingCountState, setExcludingCountState] = useState("");
     const [excludingDateState, setExcludingDateState] = useState("");
@@ -41,7 +46,48 @@ const AdminOperations = () => {
     const [meetTimeStartState, setMeetTimeStartState] = useState("");
     const [meetTimeEndState, setMeetTimeEndState] = useState("");
     const [meetTitleState, setMeetTitleState] = useState("");
+    const [meetMaxValue,setMeetMaxValue] = useState("");
+    const [untilDateOkState,setUntilDateOkState] = useState("");
 
+    const [editedFillCount,setEditedFillCount] = useState("");
+    const [editedDate,setEditedDate] = useState("");
+    const [editedCreatedAt,setEditedCreatedAt] = useState("");
+    
+
+
+    useEffect(() => {
+        const [count, , time] = excludingFillCountState.split("==");
+        const formattedExcludingFillCount = `${time} için ${count}`;
+        setEditedFillCount(formattedExcludingFillCount)
+    }, [excludingFillCountState])
+
+    useEffect(() => {
+        if (excludingDateState && excludingDateState.includes("==FOR==")) {
+            const [dateString, time] = excludingDateState.split("==FOR==");
+            const date = new Date(dateString.trim());
+            if (!isNaN(date.getTime())) {  
+                const formattedDate = new Intl.DateTimeFormat('tr-TR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                }).format(date);
+    
+                const formattedOutput = `${time.trim()} için ${formattedDate}`;
+                setEditedDate(formattedOutput);
+            } else {
+                setEditedDate("Geçersiz tarih");  
+            }
+        }
+    }, [excludingDateState]);
+    
+    useEffect(() => {
+        const formattedDate = new Intl.DateTimeFormat('tr-TR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          }).format(new Date(meetCreatedAtState * 1000));
+          setEditedCreatedAt(formattedDate)
+    }, [meetCreatedAtState])
 
 
     const [newMeetCode,setNewMeetCode] = useState("");
@@ -57,7 +103,7 @@ const AdminOperations = () => {
         }
     }, [usersData])
     
-    const collectMeetData = (countParam,dateParam,timeParam,fillCountParam,fileUrl,id,code,createdAt,desc,startDate,endDate,timeStart,timeEnd,title) => {
+    const collectMeetData = (countParam,dateParam,timeParam,fillCountParam,fileUrl,id,code,createdAt,desc,startDate,endDate,timeStart,timeEnd,title,maxValue,untilDateOkParam) => {
         setExcludingCountState(countParam);
         setExcludingDateState(dateParam);
         setExcludingTimeState(timeParam);
@@ -72,13 +118,16 @@ const AdminOperations = () => {
         setMeetTimeStartState(timeStart);
         setMeetTimeEndState(timeEnd);
         setMeetTitleState(title);
+        setMeetMaxValue(maxValue);
+        setUntilDateOkState(untilDateOkParam)
     }
 
-    const collectUserData = (usernameParam,emailParam,userIdParam,userMeetCodeParam) => {
+    const collectUserData = (usernameParam,emailParam,userIdParam,userMeetCodeParam,userRoleParam) => {
         setUsername(usernameParam)
         setEmail(emailParam)
         setUserId(userIdParam)
         setUserMeetCode(userMeetCodeParam)
+        setUserRole(userRoleParam)
     }
 
     const handleSearch = (e) => {
@@ -167,6 +216,25 @@ const AdminOperations = () => {
             console.error("Kullanıcı silinirken hata oluştu:", error);
         }
     };
+
+    const deleteMeet = async (meetCodeParam) => {
+        try {
+            toast.loading("Yükleniyor...")
+            const meetsRef = collection(db, "meets");
+            const q = query(meetsRef, where("meetCode", "==", meetCodeParam));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach(async (docSnapshot) => {
+                await deleteDoc(docSnapshot.ref);
+                console.log(`Belge ${docSnapshot.id} silindi.`);
+            });
+            toast.dismiss();
+            toast.success("Toplantı başarıyla silindi");
+        } catch (error) {
+            toast.error("Toplantı silinirken hata oluştu")
+            console.error("Belge silinirken bir hata oluştu:", error);
+        }
+    };
+    
     
 
     const customStyles = {
@@ -197,30 +265,75 @@ const AdminOperations = () => {
         },
       };
 
+      const changeRole = async (userId) => {
+        try {
+            toast.loading("Yükleniyor...");
+            const userRef = doc(db, "users", userId);
+            if(userRole === "member"){
+                setRoleSender("meetCreator")
+            }
+            else{
+                setRoleSender("member")
+            }
+            await updateDoc(userRef, {
+                role: roleSender
+            });
+            toast.dismiss();
+            toast.success("Yönetici olarak yapıldı");
+            console.log("Kullanıcının rolü başarıyla güncellendi!");
+        } catch (error) {
+            toast.error("Yönetici yapılırken hata oluştu!")
+            console.error("Kullanıcının rolü güncellenirken bir hata oluştu:", error);
+        }
+      }
+
       const addMeetCode = async (e) => {
         e.preventDefault();
         if (!newMeetCode) return;
         try {
-          toast.loading("Yükleniyor...")
-          const userDocRef = doc(db, 'users', userId);
-          await updateDoc(userDocRef, {
-            meetCode: arrayUnion(newMeetCode), 
-          });
-          toast.dismiss();
-          setNewMeetCode('');
-          toast.success("Toplantı kodu eklendi")
-          console.log('MeetCode başarıyla güncellendi!');
+            toast.loading("Yükleniyor...");
+            const userDocRef = doc(db, 'users', userId);
+            const userDoc = await getDoc(userDocRef);
+            const currentMeetCode = userDoc.data().meetCode || ""; 
+            const updatedMeetCode = currentMeetCode ? `${currentMeetCode}, ${newMeetCode}` : newMeetCode;
+            await updateDoc(userDocRef, {
+                meetCode: updatedMeetCode,
+            });
+    
+            toast.dismiss();
+            setNewMeetCode('');
+            toast.success("Toplantı kodu eklendi");
+            console.log('MeetCode başarıyla güncellendi!');
         } catch (error) {
-          toast.error("Toplantı kodu silinirken hata oluştu")
-          console.error('Hata: ', error);
+            toast.error("Toplantı kodu eklenirken hata oluştu");
+            console.error('Hata: ', error);
         }
-      };
+    };
+    
 
         const handleKeyDown = (e) => {
             if (e.key === 'Enter') {
              addMeetCode(e);
             }
         };
+
+        const unixToTurkishDate = (unixTimestamp) => {
+            if (unixTimestamp !== undefined && unixTimestamp !== null) {
+                const date = new Date(unixTimestamp * 1000); 
+                if (!isNaN(date.getTime())) {
+                    const formattedDate = new Intl.DateTimeFormat("tr-TR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                    }).format(date);
+                    return formattedDate;
+                } else {
+                    return "Geçersiz tarih"; 
+                }
+            }
+            return "Tarih henüz mevcut değil"; 
+        };
+        
 
         const results = Array.isArray(userMeetCode)
         ? userMeetCode.map(item => item.toUpperCase()) 
@@ -230,6 +343,7 @@ const AdminOperations = () => {
 
     return(
         <>
+            <Header />
             <div className={`${loading ? "h-screen w-screen fixed justify-center flex items-center bg-special-white z-40" : "hidden"}`}>
                 <div className="loader"></div>
             </div>
@@ -237,22 +351,59 @@ const AdminOperations = () => {
                 <div className="flex justify-end">
                     <img src={Close} className="w-[35px]" onClick={() => {setMeetSettingsModal(!meetSettingsModal); setMeetInfoModal(!meetInfoModal)}} alt="Close" />
                 </div>
-                <div className="flex flex-col">
-                    <div className="flex items-center">
-                        <img src={fileUrlState} className="w-[120px]"  alt="Meet Photo" />
-                        <div className="flex flex-col ms-4">
-                            <p className="inter-400 text-2xl">{meetTitleState}</p>
-                            <p className="inter-400 text-xl">{meetDescState}</p>
-                            <p className="inter-400 text-lg">{meetCodeState}</p>
+                <div className="flex items-center gap-12">
+                    <div className="flex flex-col">
+                        <div className="flex items-center">
+                            <img src={fileUrlState} className="w-[120px]"  alt="Meet Photo" />
+                            <div className="flex flex-col ms-4">
+                                <p className="inter-400 text-2xl">{meetTitleState}</p>
+                                <p className="inter-400 text-xl">{meetDescState}</p>
+                                <p className="inter-400 text-lg">{meetCodeState}</p>
+                                <p className="inter-400 text-lg">{editedCreatedAt} tarihinde kuruldu.</p>
+                            </div>
                         </div>
+
+                        {excludingTimeState === null && excludingFillCountState === "0/0==FOR==null" && editedDate === "Geçersiz tarih" && meetMaxValue === null && untilDateOkState === null ? 
+                            "" : 
+                            <p className="inter-500 text-2xl mt-8 mb-2">Kısıtlamalar</p>
+                        }
+                        {excludingTimeState === null && excludingFillCountState === "0/0==FOR==null" && editedDate === "Geçersiz tarih" && meetMaxValue === null && untilDateOkState === null ? 
+                            <p className="inter-500 text-2xl mt-5">Kısıtlama bulunmuyor</p>
+                            : 
+                            <div className="flex flex-col border p-2 rounded-lg">
+                                {excludingTimeState === null ? "" :
+                                    <p className="inter-400">Birden fazla randevu verilen saat kaç? : <span className="inter-500">{excludingTimeState}</span></p>
+                                }
+                                {excludingFillCountState === "0/0==FOR==null" ? "" : 
+                                    <p className="inter-400">Belirli saatler için verilen randevu hakları : <span className="inter-500">{editedFillCount}</span></p>
+                                }
+                                {editedDate === "Geçersiz tarih" ? "" : 
+                                    <p className="inter-400">Belirli saate hangi gün için kısıtlama getirildi?: <span className="inter-500">{editedDate}</span></p>
+                                }
+                                {meetMaxValue === undefined || meetMaxValue === null ? "" : 
+                                    <p className="inter-400">Maksimum katılabilecek üye sayısı: <span className="inter-500">{meetMaxValue}</span></p>
+                                }
+                                {untilDateOkState && untilDateOkState.seconds !== undefined ? (
+                                    <p className="inter-400">
+                                        <span className="inter-500">{unixToTurkishDate(untilDateOkState.seconds)}</span> tarihinden sonra randevu alınamaz
+                                    </p>
+                                ) : (
+                                    ""
+                                )}
+                            </div>
+                        }
+                        <p className="inter-500 text-2xl mt-8 mb-2">Toplantı Saatleri</p>
+                        <div className="flex items-center justify-center border p-2 rounded-lg">
+                        <p className="inter-500 text-2xl">{meetTimeStartState} - {meetTimeEndState}</p>
                     </div>
-                    <p className="inter-500 text-2xl mt-8 mb-2">Kısıtlamalar</p>
-                    <div className="flex flex-col border p-2 rounded-lg">
-                        <p className="inter-400">Birden fazla randevu verilen saat kaç? : <span className="inter-500">{excludingTimeState}</span></p>
-                        <p className="inter-400">Belirli saatler için verilen randevu hakları : <span className="inter-500">{excludingFillCountState}</span></p>
                     </div>
-                </div>
-            </Modal>
+                    <div className="hrElement h-[300px] w-[1px] bg-slate-500 rounded-lg"></div>
+                    <div className="flex flex-col items-start">
+                        <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 px-4 py-2 rounded-lg text-white inter-500" onClick={() => deleteMeet(meetCodeState)}>Toplantıyı sil</button>
+                        <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-4 py-2 rounded-lg text-white inter-500 mt-5" onClick={() => {navigate("/listUsers"); setMoveMeetCode(meetCodeState)}} >Toplantıya katılanları görüntüle</button>
+                    </div>
+                    </div>
+                    </Modal>
             <Modal style={customStyles} isOpen={meetInfoModal}>
                 <div className="flex justify-end">
                     <img src={Close} className="w-[35px]" onClick={() => setMeetInfoModal(!meetInfoModal)} alt="Close" />
@@ -266,7 +417,7 @@ const AdminOperations = () => {
                                     <img src={meet.fileUrl} className="w-[35px] me-2" alt="User" />
                                     <p>{meet.meetCode}</p>
                                 </div>
-                                <button className="bg-sky-500 hover:bg-sky-600 outline-0 transition-all duration-300 inter-500 px-4 py-2 rounded-lg text-white" onClick={() => {setMeetSettingsModal(!meetSettingsModal); setMeetInfoModal(!meetInfoModal); collectMeetData(meet.excludingCount,meet.excludingDate,meet.excludingTime,meet.excludingFillCount,meet.fileUrl,meet.id,meet.meetCode,meet.meetCreatedAt,meet.meetDesc,meet.meetStartDate,meet.meetEndDate,meet.meetTimeStart,meet.meetTimeEnd,meet.meetTitle)}}>...</button>
+                                <button className="bg-sky-500 hover:bg-sky-600 outline-0 transition-all duration-300 inter-500 px-4 py-2 rounded-lg text-white" onClick={() => {setMeetSettingsModal(!meetSettingsModal); setMeetInfoModal(!meetInfoModal); collectMeetData(meet.excludingCount,meet.excludingDate,meet.excludingTime,meet.excludingFillCount,meet.fileUrl,meet.id,meet.meetCode,meet.meetCreatedAt,meet.meetDesc,meet.meetStartDate,meet.meetEndDate,meet.meetTimeStart,meet.meetTimeEnd,meet.meetTitle,meet.maxUser,meet.untilDateOk)}}>...</button>
                             </div>
                         )
                     })}
@@ -285,7 +436,7 @@ const AdminOperations = () => {
                                     <img src={Account} className="invert w-[35px]" alt="User" />
                                     <p>{user.username}</p>
                                 </div>
-                                <button className="bg-sky-500 hover:bg-sky-600 outline-0 transition-all duration-300 inter-500 px-4 py-2 rounded-lg text-white" onClick={() => {setUserInfoModal(!userInfoModal); collectUserData(user.username,user.email,user.id,user.meetCode)}}>...</button>
+                                <button className="bg-sky-500 hover:bg-sky-600 outline-0 transition-all duration-300 inter-500 px-4 py-2 rounded-lg text-white" onClick={() => {setUserInfoModal(!userInfoModal); collectUserData(user.username,user.email,user.id,user.meetCode,user.role)}}>...</button>
                             </div>
                         )
                     })}
@@ -319,7 +470,7 @@ const AdminOperations = () => {
                                 </div>
                                 <input type="text" className="outline-0 mt-3 border rounded-lg p-2" onKeyDown={handleKeyDown} value={newMeetCode} onChange={(e) => setNewMeetCode(e.target.value)} placeholder="Toplantı Kodu Ekle"/>
                                 <div className="flex justify-start">
-                                    <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white inter-500 px-4 py-2 rounded-lg mt-2">Ekle</button>
+                                    <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white inter-500 px-4 py-2 rounded-lg mt-2" onClick={(e) => addMeetCode(e)}>Ekle</button>
                                 </div>
                             </div>
                         </div>
@@ -328,11 +479,11 @@ const AdminOperations = () => {
                             <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 px-4 py-2 text-white inter-400 rounded-lg" onClick={() => deleteUser(userId)}>Üyeliği sil</button>
                             <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 px-4 py-2 text-white inter-400 rounded-lg" onClick={() => updateMeetCode(userId)}>Bütün toplantı kodlarını sil</button>
                             <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 px-4 py-2 text-white inter-400 rounded-lg" onClick={() => resetPassword(email)}>Şifre yenileme bağlantısı gönder</button>
+                            <button className={`${userRole === "member" ? "bg-red-500 hover:bg-red-600" : "bg-sky-500 hover:bg-sky-600"} transition-all duration-300 px-4 py-2 text-white inter-400 rounded-lg`} onClick={() => changeRole(userId)}>{userRole === "member"  ? "Yönetici yap" : "Üye yap"}</button>
                         </div>
                     </div>
                    
             </Modal>
-            <Header />
             <div className="flex justify-center gap-2 mt-3">
                 <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 outline-0 rounded-lg px-4 py-2 text-white inter-500" onClick={() => {setUserOperationsModal(true); fetchUsers()}}>Üye işlemleri</button>
                 <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 outline-0 rounded-lg px-4 py-2 text-white inter-500" onClick={() => {setMeetInfoModal(!meetInfoModal); fetchMeets();}}>Toplantı işlemleri</button>

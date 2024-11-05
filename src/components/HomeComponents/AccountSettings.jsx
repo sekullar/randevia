@@ -90,6 +90,9 @@ const AccountSettings = () => {
         toast.success("Başarıyla çıkış yaptınız")
     }
 
+    const userMeetCodeSwipArray = typeof userMeetCodeSwip === 'string' ? userMeetCodeSwip.split(',') : [];
+
+
     return(
         <>  <Modal isOpen={modalOpen} style={customStyles}>
                 <div className="flex flex-col">

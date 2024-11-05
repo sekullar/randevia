@@ -40,7 +40,7 @@ const Login = () => {
         else{
             try{
                 
-                const user = await register(registerEmail,registerPassword, registerUsername, "Member", "no-meetcode")
+                const user = await register(registerEmail,registerPassword, registerUsername, "member", "no-meetcode")
                 if(user){
                     console.log(user)
                     setCookie("uid", user.uid,{path: "/", expires: inOneYear})

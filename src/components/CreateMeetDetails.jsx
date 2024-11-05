@@ -52,7 +52,8 @@ const CreateMeetDetails = () => {
           marginRight: '-50%',
           transform: 'translate(-50%, -50%)',
           borderRadius: "8px",
-          overflow: "hidden"
+          overflow: "hidden",
+          height: "calc(100vh - 30vh)"
         },
     };
 
