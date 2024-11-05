@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState, useContext, useDebugValue } from "react"
 import { getFirestore, collection, getDocs,doc, updateDoc, deleteDoc,arrayUnion,query, where,getDoc } from 'firebase/firestore';
 import { getAuth,deleteUser as authDeleteUser} from "firebase/auth";
 import {db,resetPassword, auth} from "../firebase/firebase"
@@ -11,6 +11,7 @@ import Account from "../images/mdi--account.svg"
 import Modal from 'react-modal';
 import { DataContext } from "./Context/MainContext";
 import { useNavigate } from "react-router-dom";
+import { useCookies } from "react-cookie";
 
 
 const AdminOperations = () => {
@@ -28,7 +29,7 @@ const AdminOperations = () => {
     const [meetSettingsModal,setMeetSettingsModal] = useState(false);
     const [userRole,setUserRole] = useState("");
     const [roleSender,setRoleSender] = useState("");
-    const {moveMeetCode,setMoveMeetCode} = useContext(DataContext)
+    const {moveMeetCode,setMoveMeetCode,userDataSwip} = useContext(DataContext)
     const navigate = useNavigate("");
 
 
@@ -52,7 +53,40 @@ const AdminOperations = () => {
     const [editedFillCount,setEditedFillCount] = useState("");
     const [editedDate,setEditedDate] = useState("");
     const [editedCreatedAt,setEditedCreatedAt] = useState("");
+
+    const [userRoleState,setUserRoleState] = useState("");
+
+    const [cookies, setCookie, removeCookie] = useCookies(['uid']);
+
     
+    const getUserInfo = async () => {
+        setLoading(true);
+        try {
+            const userDoc = doc(db, "users", cookies.uid);
+            const userSnapshot = await getDoc(userDoc);
+            
+            if (userSnapshot.exists()) {
+                const userData = userSnapshot.data();
+                console.log(userData);
+                setUserRoleState(userData.role)
+                if(userData.role != "meetCreator"){
+                    navigate("/404NotFound")
+                }
+                setLoading(false)
+            } else {
+                toast.error("Kullanıcı bulunamadı.");
+                removeCookie("uid");
+            }
+        } catch (error) {
+            toast.error("Veriler çekilirken bir hata oluştu, lütfen sayfayı yenileyip tekrar deneyin.");
+            console.error(error);
+            setLoading(false);
+        }
+    };
+ 
+    useEffect(() => {
+        getUserInfo();
+    }, [])
 
 
     useEffect(() => {

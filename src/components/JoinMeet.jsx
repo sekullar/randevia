@@ -190,7 +190,8 @@ const JoinMeet = () => {
   
 
   const sendMeetRezervation = (meetCode,filteredTime,selectedDate) => {
-    if(selectedDate == ""){
+    console.log(selectedDate)
+    if(selectedDate == "NaN-NaN-NaN"){
       toast.error("Lütfen tarih seçin")
     }
     else{

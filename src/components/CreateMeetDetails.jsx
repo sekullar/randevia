@@ -111,6 +111,44 @@ const CreateMeetDetails = () => {
         }
     };
     
+    const createMeetFuncControl = () => {
+        if(title == ""){
+            toast.error("Lütfen toplantı başlığı girin")
+        }
+        else{
+            if(desc == ""){
+                toast.error("Lütfen toplantı açıklaması girin")
+            }
+            else{
+                if(meetStart == null){
+                    toast.error("Lütfen başlangıç tarihini girin")
+                }
+                else{
+                    if(meetEnd == null){
+                        toast.error("Lütfen bitiş tarihi seçin")
+                    }
+                    else{
+                        if(timeStart == null){
+                            toast.error("Lütfen başlangıç saatini seçin")
+                        }
+                        else{
+                            if(timeEnd == null){
+                                toast.error("Lütfen bitiş saatini seçin")
+                            }
+                            else{
+                                if(timeStart >= timeEnd){
+                                    toast.error("Başlangıç saati bitiş saatiyle eşit yada küçük olamaz")
+                                }
+                                else{
+                                    createMeetFunc();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     const createMeetFunc = async () => {
         try {
@@ -341,7 +379,7 @@ const CreateMeetDetails = () => {
                 </div>
             </div>
             <div className="flex justify-center">
-                <button onClick={() => createMeetFunc()} className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 rounded-lg absolute bottom-0 text-white inter-500 px-4 py-2 mb-5">Toplantı Oluştur</button>
+                <button onClick={() => createMeetFuncControl()} className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 rounded-lg absolute bottom-0 text-white inter-500 px-4 py-2 mb-5">Toplantı Oluştur</button>
             </div>
         </>
     );
