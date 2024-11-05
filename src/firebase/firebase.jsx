@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth"
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore, setDoc, doc  } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"
@@ -74,5 +74,28 @@ export const login = async (email, password) => {
   }
 };
 
-export { db,storage }
+export const resetPassword = async (email) => {
+  try {
+    toast.loading("Şifre yenileme bağlantısı gönderiliyor...");
+    await sendPasswordResetEmail(auth, email);
+    toast.dismiss();
+    toast.success("Şifre yenileme bağlantısı e-posta adresinize gönderildi!");
+  } catch (error) {
+    toast.dismiss();
+    switch (error.code) {
+      case "auth/user-not-found":
+        toast.error("Bu e-posta adresi ile kayıtlı bir kullanıcı bulunamadı.");
+        break;
+      case "auth/invalid-email":
+        toast.error("Geçersiz e-posta adresi!");
+        break;
+      default:
+        toast.error("Şifre sıfırlama işlemi sırasında bir hata oluştu.");
+        console.error(error);
+        break;
+    }
+  }
+};
+
+export { db,storage,auth }
 export default app;

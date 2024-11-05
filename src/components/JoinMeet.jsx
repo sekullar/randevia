@@ -7,7 +7,7 @@ import Select from 'react-select';
 import "react-datepicker/dist/react-datepicker.css";
 import "../css/joinMeet.css"
 import { db } from '../firebase/firebase'; 
-import { doc, getDoc,setDoc } from 'firebase/firestore';
+import { doc, getDoc,setDoc,getDocs,collection } from 'firebase/firestore';
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
@@ -23,6 +23,12 @@ const JoinMeet = () => {
     const [excludingCountFillState,setExcludingCountFillState] = useState("");
     const [excludingTimeState,setExcludingTimeState] = useState("");
     const [excludingDateState,setExcludingDateState] = useState("");
+    const [excludingDayDateState,setExcludingDayDateState] = useState("");
+    const [untilDateOkState,setUntilDateOkState] = useState("");
+    const [untilDateOkValid,setUntilDateOkValid] = useState(true);
+    const [userListData,setUserListData] = useState();
+    const [usersValueOk,setUsersValueOk] = useState(true)
+    const [usersMaxValue,setUsersMaxValue] = useState(0);
 
     const [loading,setLoading] = useState(false);
 
@@ -43,6 +49,34 @@ const JoinMeet = () => {
         }
         return null; 
     };
+
+    useEffect(() => {
+      if(excludingDayDateState != null){
+        console.log("excludingDayDateState",excludingDayDateState.seconds)
+        console.log("excludingDayDateState full date:", formatDateFromStringTimestamp(excludingDayDateState.seconds))
+      }
+    }, [excludingDayDateState]) 
+
+    function formatDateFromStringTimestamp(stringTimestamp) {
+      if (!stringTimestamp) {
+        return ''; 
+      }
+      const timestamp = Number(stringTimestamp);
+      if (isNaN(timestamp) || timestamp < 0) {
+        return ''; 
+      }
+      const date = new Date(timestamp * 1000); 
+      if (date.getTime() < 0) {
+        return ''; 
+      }
+    
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+    
+      return `${year}-${month}-${day}`;
+    }
+    
 
     const getBusyTimeMeets = async () => {
       try {
@@ -165,6 +199,7 @@ const JoinMeet = () => {
       }
       else{
         setLoading(true)
+
         updateOrCreateBusyTimeMeet(meetCode,filteredTime,selectedDate)
         setLoading(false)
       }
@@ -189,6 +224,10 @@ const JoinMeet = () => {
         setExcludingCountState(meetData.excludingCount);
         setExcludingTimeState(meetData.excludingTime);
         setExcludingDateState(meetData.excludingDate);
+        setExcludingDayDateState(meetData.excludingDayDate);
+        setUntilDateOkState(meetData.untilDateOk);
+        setUsersMaxValue(meetData.maxUser)
+        console.log("maksimum Kullanıcı",meetData.maxUser);
       } else {
         console.log("Bu meetCode'a sahip bir belge yok!", processedMeetCode, " olarak aratıldı");
         return null;
@@ -247,17 +286,19 @@ const JoinMeet = () => {
         const filteredOptions = options.filter(option => {
             const hourValue = parseInt(option.value.split(":")[0]);
             const isSameDate = currentDate === selectedDateString;
-            const isFull = currentParticipants === maxParticipants && hourValue === parseInt(excludingTimeState.split(":")[0]);
+            const isFull = currentParticipants === maxParticipants && excludingTimeState !== null && hourValue === parseInt(excludingTimeState.split(":")[0]);
+
             
             console.log("current date", currentDate);
             console.log("selectedDateString", selectedDateString);
             console.log("is same date", isSameDate);
+            console.log("isFull",isFull)
 
             return (
                 hourValue >= startHour &&
                 hourValue <= endHour &&
-                hourValue >= parseInt(meetInfoStartTime.split(":")[0]) && // startTime'dan küçük olmamalı
-                hourValue <= parseInt(meetInfoEndTime.split(":")[0]) && // endTime'dan büyük olmamalı
+                hourValue >= parseInt(meetInfoStartTime.split(":")[0]) && 
+                hourValue <= parseInt(meetInfoEndTime.split(":")[0]) && 
                 !unavailableHours.includes(option.value) &&
                 !isFull 
             );
@@ -267,7 +308,13 @@ const JoinMeet = () => {
     }
 }, [busyTimeData, formattedDate, meetInfoStartTime, meetInfoEndTime]);
 
-    
+    useEffect(() => {
+      if(untilDateOkState){
+        console.log("untilDateOkState",untilDateOkState.seconds)
+        console.log("untilDateOk full date", formatDateFromStringTimestamp(untilDateOkState.seconds))
+      }
+    }, [untilDateOkState])    
+
     useEffect(() => {
       console.log("Not formatted date",selectedDate)
       setFormattedDate(formatDate(selectedDate));
@@ -281,7 +328,69 @@ const JoinMeet = () => {
       return time.slice(0, 2); 
     }
 
+    useEffect(() => {
+      if (!untilDateOkState || !untilDateOkState.seconds) {
+          return; 
+      }
+      const today = new Date();
+      const formattedToday = today.toISOString().split('T')[0];
+      const dateToCheck = formatTimestampToDate(untilDateOkState.seconds);
+      const formattedDateToCheck = new Date(dateToCheck);
+      console.log("today:", formattedToday, "dateToCheck:", untilDateOkState);
+      if (formattedDateToCheck <= today) {
+          setUntilDateOkValid(false);
+      } else {
+          setUntilDateOkValid(true); 
+      }
+  }, [untilDateOkState]);
 
+  const fetchMeetCodeDocs = async (meetCode) => {
+    setLoading(true);
+    try {
+        const meetsOkRef = collection(db, "meetsOk");
+        const querySnapshot = await getDocs(meetsOkRef);
+
+        const matchingDocs = [];
+        querySnapshot.forEach((doc) => {
+            if (doc.id.includes(`-${meetCode}`)) { 
+                matchingDocs.push({ id: doc.id, data: doc.data() });
+            }
+        });
+
+        console.log("Eşleşen dokümanlar:", matchingDocs.length);
+        if(matchingDocs.length >= usersMaxValue){
+          console.log(matchingDocs.length,">=",usersMaxValue)
+          setUsersValueOk(false)
+          console.log("red")
+        }
+        else{
+          setUsersValueOk(true)
+          console.log("kabul")
+        }
+        setUserListData(matchingDocs);
+        setLoading(false);
+        return matchingDocs;
+
+    } catch (error) {
+        console.error("Dokümanları çekerken hata oluştu:", error);
+        toast.error("Veriler çekilirken bir hata oluştu");
+        setLoading(false); 
+        return [];
+    }
+};
+
+useEffect(() => {
+  fetchMeetCodeDocs(meetCodeSwip);
+}, [usersMaxValue])
+   
+
+  function formatTimestampToDate(timestamp) {
+    const date = new Date(timestamp * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); 
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
   const unixFormatDateInTurkish = (timestamp) => {
     const date = new Date(timestamp * 1000);
     const options = {
@@ -299,11 +408,16 @@ const JoinMeet = () => {
 };
 
       useEffect(() => {
-        console.log(meetInfoStartTime,meetInfoEndTime);
-        getBusyTimeMeets();
-        getMeetsForExcluding();
-        console.log("Running and rendering")
-      }, [])
+        const fetchData = async () => {
+            console.log(meetInfoStartTime, meetInfoEndTime);
+            await getBusyTimeMeets(); 
+            await getMeetsForExcluding(); 
+            console.log("Running and rendering");
+        };
+
+        fetchData();
+      }, []);
+
 
       useEffect(() => {
         console.log(selectedTime)
@@ -316,9 +430,19 @@ const JoinMeet = () => {
         const year = dateObj.getFullYear();
         const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
         const day = String(dateObj.getDate()).padStart(2, '0');
-        // setFormattedDate(`${year}-${month}-${day}`)
         return `${year}-${month}-${day}`;
       }
+      
+
+      const getExcludedDates = (timestampParam) => {
+        if (!timestampParam || (Array.isArray(timestampParam.seconds) && timestampParam.seconds.length === 0)) {
+          return [];
+        }
+        if (Array.isArray(timestampParam.seconds)) {
+          return timestampParam.seconds.map(date => new Date(date * 1000));
+        }
+        return [new Date(timestampParam.seconds * 1000)];
+      };
       
 
     return(
@@ -339,13 +463,26 @@ const JoinMeet = () => {
                         <p className="inter-400">Toplantı kodu: {meetCodeSwip}</p>
                     }
                 </div>
-                <div className="flex flex-col w-full items-center joinMeetDatePicker">
-                    <p className="inter-400 mb-4">Hangi güne randevu almak istersiniz?</p>
-                    <DatePicker  className="border" selected={selectedDate} onChange={(date) => setSelectedDate(date)} locale={tr} minDate={convertUnixToDate(meetInfoStartDate)} maxDate={convertUnixToDate(meetInfoEndDate)}  open="true"/>
-                    <p className="my-3">Randevuyu saat kaça almak istersiniz?</p>
-                    <Select options={filteredBusyTimeData} onChange={(selectedOption) => setSelectedTime(selectedOption.value)}  className="rounded-lg border outline-0 mt-2"/>
-                    <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-6 py-2 inter-500 rounded-lg text-white mt-4" onClick={() => sendMeetRezervation(meetCodeSwip,filteredTime,formattedDate)}>Randevu al</button>
-                </div>
+                {untilDateOkValid ?
+                  usersValueOk ? 
+                 <div className="flex flex-col w-full items-center joinMeetDatePicker">
+                      <p className="inter-400 mb-4">Hangi güne randevu almak istersiniz?</p>
+                      <DatePicker  className="border" selected={selectedDate} onChange={(date) => setSelectedDate(date)} locale={tr} minDate={convertUnixToDate(meetInfoStartDate)} maxDate={convertUnixToDate(meetInfoEndDate)} excludeDates={getExcludedDates(excludingDayDateState)} open="true"/>
+                      <p className="my-3">Randevuyu saat kaça almak istersiniz?</p>
+                      <Select options={filteredBusyTimeData} onChange={(selectedOption) => setSelectedTime(selectedOption.value)}  className="rounded-lg border outline-0 mt-2"/>
+                      <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-6 py-2 inter-500 rounded-lg text-white mt-4" onClick={() => sendMeetRezervation(meetCodeSwip,filteredTime,formattedDate)}>Randevu al</button>
+                  </div> 
+                  :
+                  <div className="flex flex-col items-center w-full">
+                    <p className="text-red-500 inter-500 text-2xl">Bu randevu için maksimum üye sınırına erişildi</p>
+                  </div>
+                  :
+
+                  <div className="flex flex-col items-center w-full">
+                    <p className="text-red-500 inter-500 text-2xl">Bu randevu için randevu alma süresi geçti</p>
+                  </div>
+                }
+               
             </div>
         </>
     )

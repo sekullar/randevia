@@ -66,7 +66,7 @@ const ListMeetUsers = () => {
         } catch (error) {
             console.error("Dokümanları çekerken hata oluştu:", error);
             toast.error("Veriler çekilirken bir hata oluştu");
-            setLoading(false); // Hata durumunda yükleme durumu kapat
+            setLoading(false); 
             return [];
         }
     };

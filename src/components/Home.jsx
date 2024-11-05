@@ -41,6 +41,7 @@ const Home = () => {
                 setUserDataSwip(userData); 
             } else {
                 toast.error("Kullanıcı bulunamadı.");
+                removeCookie("uid");
             }
         } catch (error) {
             toast.error("Veriler çekilirken bir hata oluştu, lütfen sayfayı yenileyip tekrar deneyin.");

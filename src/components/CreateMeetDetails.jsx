@@ -36,6 +36,10 @@ const CreateMeetDetails = () => {
     const [excludingDate,setExcludingDate] = useState(null);
     const [excludingTime,setExcludingTime] = useState(null);
     const [excludingCount,setExcludingCount] = useState(0);
+    const [excludingDayDate,setExcludingDayDate] = useState(null);
+    const [maxUser,setMaxUser] = useState(null);
+
+    const [untilDateOk,setUntilDateOk] = useState(null);
 
     const [cookies, setCookie, removeCookie] = useCookies(['uid']);
 
@@ -48,8 +52,7 @@ const CreateMeetDetails = () => {
           marginRight: '-50%',
           transform: 'translate(-50%, -50%)',
           borderRadius: "8px",
-          overflow: "hidden",
-          height: "300px"
+          overflow: "hidden"
         },
     };
 
@@ -73,7 +76,7 @@ const CreateMeetDetails = () => {
             if (userDoc.exists()) {
                 const existingMeetCodes = userDoc.data().meetCode; 
 
-                const updatedMeetCodes = existingMeetCodes ? `${existingMeetCodes},allShow-${uniqueState}` : `allShow-${uniqueState}`;
+                const updatedMeetCodes = existingMeetCodes ? `${existingMeetCodes},${uniqueState}` : `${uniqueState}`;
 
                 await updateDoc(userDocRef, {
                     meetCode: updatedMeetCodes 
@@ -132,7 +135,10 @@ const CreateMeetDetails = () => {
                 excludingCount: `${excludingCount}==FOR==${excludingTime}`,
                 excludingDate: `${excludingDate}==FOR==${excludingTime}`,
                 excludingTime: excludingTime,
-                excludingFillCount: `0/${excludingCount}==FOR==${excludingTime}`
+                excludingFillCount: `0/${excludingCount}==FOR==${excludingTime}`,
+                excludingDayDate: excludingDayDate,
+                untilDateOk: untilDateOk,
+                maxUser: maxUser
             });
             
             setLoading(false);
@@ -231,6 +237,19 @@ const CreateMeetDetails = () => {
                     <p className="inter-400">saati için</p>
                     <input type="text" className="w-[120px] border p-1 rounded-lg" value={excludingCount} onChange={(e) => setExcludingCount(e.target.value)} placeholder="Kaç kere?"/>
                     <p>kere randevu yapılabilinir.</p>
+                </div>
+                <div className="mt-5 flex items-center">
+                    <DatePicker selected={excludingDayDate} locale={tr} onChange={(date) => setExcludingDayDate(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2 border"/>
+                    <p className="inter-400 ms-2">tarihinde randevu yapılmasını istemiyorum.</p>
+                </div>
+                <div className="mt-5 flex items-center">
+                    <DatePicker selected={untilDateOk} locale={tr} onChange={(date) => setUntilDateOk(date)} className="outline-0 py-2 rounded-lg cursor-pointer px-2 border"/>
+                    <p className="ms-2 inter-400">tarihine kadar randevu alınabilinir, bu tarihten sonra randevu alınamaz.</p>
+                </div>
+                <div className="flex items-center mt-5">
+                    <p className="me-2 inter-400">Bu randevuya en fazla</p>
+                    <input type="text" className="w-[120px] border p-1 rounded-lg" value={maxUser} onChange={(e) => setMaxUser(e.target.value)} placeholder="Kişi sayısı girin"/>
+                    <p className="ms-2 inter-400">kişi katılabilir.</p>
                 </div>
             </Modal>
             <div className={`${loading ? "h-screen w-screen fixed justify-center flex items-center bg-special-white z-50" : "hidden"}`}>

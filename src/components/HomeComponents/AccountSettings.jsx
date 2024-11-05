@@ -120,6 +120,9 @@ const AccountSettings = () => {
                     <input type="text" value={newMeetCode} onChange={(e) => setNewMeetCode(e.target.value)} className="border my-3 p-2 rounded-lg outline-0" placeholder="Toplantı Kodu"/>
                     <button className="px-4 py-2 inter-500 bg-sky-500 hover:bg-sky-600 transition-all outline-0 duration-300 rounded-lg text-white" onClick={() => updateMeetCode()}>Toplantı Kodu Ekle</button>
                 </div>
+                <div className="flex justify-center items-center">
+                    <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 rounded-lg px-4 py-2 inter-500 text-white mt-3" onClick={() => navigate("/adminOperations")}>Admin işlemleri</button>
+                </div>
                 <div className="flex justify-center items-center w-full mb-5 absolute bottom-0">
                     <button className="text-white inter-500 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition-all duration-300 outline-0" onClick={() => setModalOpen(!modalOpen)}>Çıkış yap</button>
                 </div>

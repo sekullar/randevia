@@ -173,7 +173,7 @@ const Article = () => {
         {/* <LastMeet /> */}
         <div className="flex items-center p-4">
         {userDataSwip && userDataSwip.role === "MeetCreator" ? 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 bg-sky-500 p-5 rounded-xl mx-12 text-white">
                 <p className="inter-400 text-4xl">Randevia'ya Hoşgeldiniz! 🎉</p>
                 <p className="inter-400 text-lg">
                     Randevia ile randevularınızı 🗓️ ve toplantılarınızı 📅 daha hızlı ve etkili bir şekilde yönetebilirsiniz! 

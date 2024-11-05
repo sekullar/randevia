@@ -9,6 +9,7 @@ import AccountSettings from "./HomeComponents/AccountSettings";
 import JoinMeet from "./JoinMeet";
 import NotFound from "./HomeComponents/404NotFound";
 import ListMeetUsers from "./ListMeetUsers";
+import AdminOperations from "./AdminOperations"
 
 const Main = () => {
   const [cookies] = useCookies(['uid']);
@@ -33,6 +34,7 @@ const Main = () => {
       location.pathname !== "/accountSettings" &&
       location.pathname !== "/joinMeet" &&
       location.pathname !== "/listUsers" &&
+      location.pathname !== "/adminOperations" &&
       location.pathname !== "/"
     ) {
       navigate("/404NotFound");
@@ -51,6 +53,7 @@ const Main = () => {
       <Route path="/joinMeet" element={<JoinMeet />} />
       <Route path="/404NotFound" element={<NotFound />} />
       <Route path="/listUsers" element={<ListMeetUsers />} />
+      <Route path="/adminOperations" element={<AdminOperations />} />
     </Routes>
   );
 };
