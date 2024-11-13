@@ -25,6 +25,7 @@ const Article = () => {
     const [meetTitleState,setMeetTitleState] = useState("");
     const [meetDescState,setMeetDescState] = useState("");
     const [meetPhotoUrlState,setMeetPhotoUrlState] = useState("");
+    const [meetCodeState,setMeetCodeState] = useState("");
     const navigate = useNavigate();
 
 
@@ -66,18 +67,22 @@ const Article = () => {
 
 
     const deleteMeet = async (meetCode) => {
-        try{
-            toast.loading("Yükleniyor...")
-            const docRef = doc(db,"meets",meetCode)
+        try {
+            const actualMeetCode = meetCode.split("-").pop(); 
+            console.log("Ready meet code", actualMeetCode);
+    
+            toast.loading("Yükleniyor...");
+            const docRef = doc(db, "meets", actualMeetCode);
             await deleteDoc(docRef);
+            
             toast.dismiss();
             toast.success("Toplantı başarıyla silindi");
-        }
-        catch(error){
+        } catch (error) {
             toast.error("Toplantı silinirken bir hata oluştu");
             console.error(error);
         }
     }
+    
 
     const generateRandomCode = (length = 12) => {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -101,23 +106,7 @@ const Article = () => {
                 <img src={CloseImg} alt="Close" onClick={() => setSettingsModal(!settingsModal)} className="absolute cursor-pointer top-0 end-0 w-[35px]"/>
                 <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-12 inter-500" onClick={() => {deleteMeet(moveMeetCode); setSettingsModal(!settingsModal) }}>Toplantıyı sil</button>
                 <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-2 inter-500" onClick={() => navigate("/listUsers")}>Toplantı listesini görüntüle</button>
-            </div>
-        </Modal>
-        <Modal style={customStyles} isOpen={modalOpen}>
-            <div className="homeModalHeight relative flex">
-                <div className="">
-                    <div className="flex flex-col  items-center justify-center h-full">
-                        <div className="flex justify-end absolute top-0 end-0">
-                            <img src={CloseImg} className="w-[35px] cursor-pointer" onClick={() => setModalOpen(!modalOpen)} alt="" />
-                        </div>
-                        <p className="inter-500 text-2xl">{meetTitleState}</p>
-                        <img src={meetPhotoUrlState} className="w-[300px] my-2" alt="Meet Image" />
-                        <p className="inter-400 w-[400px] max-h-[500px] overflow-auto">{meetDescState}</p>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 w-full absolute bottom-0">
-                        <button  className="bg-sky-500 hover:bg-sky-600 transition-all w-full duration-300 px-4 py-2 inter-500 text-white rounded-lg h-[40px] outline-0" onClick={() => navigate("/joinMeet")}>Toplantıya Katıl</button>
-                    </div>
-                </div>
+                <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-2 inter-500" onClick={() => {console.log(meetCodeSwip); navigate(`/popupMeet?meetCode=${meetCodeState}`); }}>Toplantı iframe'i oluştur</button>
             </div>
         </Modal>
         <div className="flex items-center justify-center flex-wrap gap-4 p-3">
@@ -147,7 +136,6 @@ const Article = () => {
                                         setMeetTitleState(meet.meetTitle); 
                                         setMeetDescState(meet.meetDesc); 
                                         setMeetPhotoUrlState(meet.fileUrl); 
-                                        setModalOpen(true); 
                                         getMeetInfo(
                                             meet.meetTitle,
                                             meet.fileUrl,
@@ -159,6 +147,7 @@ const Article = () => {
                                             meet.meetCreatedAt,
                                             meet.meetCode
                                         );
+                                        navigate("/joinMeet")
                                     }} 
                                     className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-4 py-2 inter-500 text-white rounded-lg h-[40px] outline-0"
                                 >
@@ -167,7 +156,7 @@ const Article = () => {
                                 {userDataSwip.role == "meetCreator" &&
                                 <div>
                                     <button 
-                                        onClick={() => {setSettingsModal(!settingsModal); setMoveMeetCode(meet.meetCode)}} 
+                                        onClick={() => {setSettingsModal(!settingsModal); setMoveMeetCode(meet.meetCode); setMeetCodeState(meet.meetCode)}} 
                                         onMouseEnter={() => setIsHovered(true)} 
                                         onMouseLeave={() => setIsHovered(false)} 
                                         className="bg-sky-500 hover:bg-sky-500 transition-all duration-300 outline-0 rounded-lg px-4 py-2"

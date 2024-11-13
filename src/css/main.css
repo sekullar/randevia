@@ -39,3 +39,7 @@
 .itemBoxShadow{
     box-shadow: 0px 0px 14px -9px rgba(0,0,0,0.75);
 }
+
+.react-datepicker__triangle{
+     display: none !important;
+}

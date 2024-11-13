@@ -10,6 +10,7 @@ import JoinMeet from "./JoinMeet";
 import NotFound from "./HomeComponents/404NotFound";
 import ListMeetUsers from "./ListMeetUsers";
 import AdminOperations from "./AdminOperations"
+import PopupMeet from "./PopupMeet";
 
 const Main = () => {
   const [cookies] = useCookies(['uid']);
@@ -35,6 +36,7 @@ const Main = () => {
       location.pathname !== "/joinMeet" &&
       location.pathname !== "/listUsers" &&
       location.pathname !== "/adminOperations" &&
+      location.pathname !== "/popupMeet" &&
       location.pathname !== "/"
     ) {
       navigate("/404NotFound");
@@ -54,6 +56,7 @@ const Main = () => {
       <Route path="/404NotFound" element={<NotFound />} />
       <Route path="/listUsers" element={<ListMeetUsers />} />
       <Route path="/adminOperations" element={<AdminOperations />} />
+      <Route path="/popupMeet" element={<PopupMeet />} />
     </Routes>
   );
 };

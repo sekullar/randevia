@@ -1,0 +1,80 @@
+  .specialOverflowStyle::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  .specialOverflowStyle::-webkit-scrollbar-track {
+    background: #ffffff7c;
+    border-radius: 3px;
+  }
+  
+  .specialOverflowStyle::-webkit-scrollbar-thumb {
+    background: #00000011;
+    border-radius: 3px;
+  }
+  
+  @supports not selector(::-webkit-scrollbar) {
+    .specialOverflowStyle {
+      scrollbar-color: #00000052
+                     #ffffff
+    }
+  }
+
+  .bg-bg-2{
+    background-image: url("../images/bg.png");
+  }
+
+  .react-datepicker__day--keyboard-selected{
+    outline: 0px;
+  }
+
+  .bg-special-white{
+    background-color: rgba(255, 255, 255, 0.471);
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper{
+    position: relative !important;
+    transform: translate(0,0) !important;
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker {
+    width: 100% !important;
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container{
+    width: 100% !important;
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__header {
+    background-color: transparent;
+    border: 0px solid transparent;
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker{
+    border: 0px solid transparent;
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__header .react-datepicker__day-names{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+  }
+
+  .popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__header .react-datepicker__day-names div{
+    font-size: 15px;
+    font-family: "Inter", sans-serif;
+  }
+
+.popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__month .react-datepicker__week{
+    display: flex;
+    justify-content: space-between;
+}
+
+.popupDatepicker .react-datepicker__tab-loop .react-datepicker-popper div .react-datepicker .react-datepicker__month-container .react-datepicker__month .react-datepicker__week  .react-datepicker__day{
+    font-size: 15px;
+}
+
+.popupDatepicker .react-datepicker-wrapper .react-datepicker__input-container input{
+    outline: 0px;
+    color: white;
+}
+
