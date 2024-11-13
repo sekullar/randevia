@@ -20,15 +20,13 @@ const Main = () => {
   useEffect(() => {
     if (cookies.uid) {
       if(location.pathname === "/"){
-        if(location.pathname === "/popupMeet"){
-          navigate("/popupMeet")
-        }
-        else{
           navigate("/home")
-        }
       }
     } else {
-      navigate("/login");
+      if(location.pathname != "/popupMeet")
+      {
+        navigate("/login");
+      }
     }
   }, [cookies, navigate]); 
 
