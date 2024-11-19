@@ -58,7 +58,6 @@ const LastMeet = () => {
             allMeetData.push(...meetData); 
         }
 
-        console.log("Tüm Filtrelenmiş Belgeler:", allMeetData);
         setAllRezervationData(allMeetData)
         setFillData(false)
         setLoading(false); 

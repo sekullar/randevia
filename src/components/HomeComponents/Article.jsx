@@ -69,7 +69,6 @@ const Article = () => {
     const deleteMeet = async (meetCode) => {
         try {
             const actualMeetCode = meetCode.split("-").pop(); 
-            console.log("Ready meet code", actualMeetCode);
     
             toast.loading("Yükleniyor...");
             const docRef = doc(db, "meets", actualMeetCode);
@@ -106,7 +105,7 @@ const Article = () => {
                 <img src={CloseImg} alt="Close" onClick={() => setSettingsModal(!settingsModal)} className="absolute cursor-pointer top-0 end-0 w-[35px]"/>
                 <button className="bg-red-500 hover:bg-red-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-12 inter-500" onClick={() => {deleteMeet(moveMeetCode); setSettingsModal(!settingsModal) }}>Toplantıyı sil</button>
                 <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-2 inter-500" onClick={() => navigate("/listUsers")}>Toplantı listesini görüntüle</button>
-                <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-2 inter-500" onClick={() => {console.log(meetCodeSwip); navigate(`/popupMeet?meetCode=${meetCodeState}`); }}>Toplantı iframe'i oluştur</button>
+                <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 text-white px-4 py-2 rounded-lg mt-2 inter-500" onClick={() => {navigate(`/popupMeet?meetCode=${meetCodeState}`); }}>Toplantı iframe'i oluştur</button>
             </div>
         </Modal>
         <div className="flex items-center justify-center flex-wrap gap-4 p-3">

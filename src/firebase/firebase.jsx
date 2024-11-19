@@ -42,7 +42,6 @@ export const register = async (email, password,username,role,meetCode) => {
       toast.error("E-Posta bilgileriniz doğru değil!");
     } else {
       toast.error("Kayıt işlemi sırasında bir hata oluştu.");
-      console.log(error)
     }
   }
 }

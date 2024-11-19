@@ -52,8 +52,6 @@ const JoinMeet = () => {
 
     useEffect(() => {
       if(excludingDayDateState != null){
-        console.log("excludingDayDateState",excludingDayDateState.seconds)
-        console.log("excludingDayDateState full date:", formatDateFromStringTimestamp(excludingDayDateState.seconds))
       }
     }, [excludingDayDateState]) 
 
@@ -85,10 +83,8 @@ const JoinMeet = () => {
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          console.log('Döküman verisi:', docSnap.data());
           setBusyTimeData(docSnap.data());
         } else {
-          console.log('Döküman bulunamadı, yeni doküman oluşturuluyor...');
           
           const newDocData = {
             busyTimes: [], 
@@ -96,14 +92,12 @@ const JoinMeet = () => {
           };
     
           await setDoc(docRef, newDocData);
-          console.log('Yeni doküman oluşturuldu:', newDocData);
           setBusyTimeData(newDocData); 
         }
     
         setLoading(false);
       } catch (error) {
         toast.error("Toplantı verisi alınırken bir hata oluştu!");
-        console.error(error);
       }
     };
     
@@ -139,10 +133,8 @@ const JoinMeet = () => {
         const currentBusyTime = docSnap.data().busyTime || "";
         const updatedBusyTime = `${currentBusyTime}${newBusyTimeData}`;
         await setDoc(docRef, { busyTime: updatedBusyTime }, { merge: true });
-        console.log(`Güncellendi: ${updatedBusyTime}`);
       } else {
         await setDoc(docRef, { busyTime: newBusyTimeData });
-        console.log(`Oluşturuldu: ${newBusyTimeData}`);
       }
 
       const meetsOkDocRef = doc(db, "meetsOk", `${cookies.uid}-${meetCodeSwip}`);
@@ -156,7 +148,6 @@ const JoinMeet = () => {
           uid: cookies.uid
         };
         await setDoc(meetsOkDocRef, newMeetData);
-        console.log(`Yeni belge oluşturuldu: ${JSON.stringify(newMeetData)}`);
       } else {
         const currentBusyTime = meetsSnap.data().busyTime || "";
         const updatedBusyTime = `${currentBusyTime}//${filteredTime}`;
@@ -171,26 +162,19 @@ const JoinMeet = () => {
           },
           { merge: true }
         );
-        console.log(`Güncellendi: busyTime=${updatedBusyTime}, rezerationFor=${updatedReservationFor}`);
       }
 
       toast.dismiss();
       toast.success("Randevunuz başarıyla eklendi");
       navigate("/home");
     } catch (error) {
-      console.error("Güncelleme veya oluşturma hatası:", error);
       toast.error("Randevunuz eklenirken hata oluştu");
     }
   };
   
-  useEffect(() => {
-    console.log("Selected Date", selectedDate);
-    console.log("Formatted Date", formattedDate)
-  }, [formattedDate,selectedDate])
   
 
   const sendMeetRezervation = (meetCode,filteredTime,selectedDate) => {
-    console.log(selectedDate)
     if(selectedDate == "NaN-NaN-NaN"){
       toast.error("Lütfen tarih seçin")
     }
@@ -220,7 +204,6 @@ const JoinMeet = () => {
   
       if (meetSnap.exists()) {
         const meetData = meetSnap.data();
-        console.log("Toplantı Verileri:", meetData);
         setExcludingCountFillState(meetData.excludingFillCount);
         setExcludingCountState(meetData.excludingCount);
         setExcludingTimeState(meetData.excludingTime);
@@ -228,9 +211,7 @@ const JoinMeet = () => {
         setExcludingDayDateState(meetData.excludingDayDate);
         setUntilDateOkState(meetData.untilDateOk);
         setUsersMaxValue(meetData.maxUser)
-        console.log("maksimum Kullanıcı",meetData.maxUser);
       } else {
-        console.log("Bu meetCode'a sahip bir belge yok!", processedMeetCode, " olarak aratıldı");
         return null;
       }
     } catch (error) {
@@ -249,7 +230,6 @@ const JoinMeet = () => {
         const dateString = excludingDateState.split("==FOR==")[0];
         const currentDate = formatDate(dateString);
         const selectedDateString = formattedDate;  
-        console.log(currentDate, selectedDateString);
 
         const options = [
             { value: "00:00", label: "00:00" },
@@ -290,10 +270,6 @@ const JoinMeet = () => {
             const isFull = currentParticipants === maxParticipants && excludingTimeState !== null && hourValue === parseInt(excludingTimeState.split(":")[0]);
 
             
-            console.log("current date", currentDate);
-            console.log("selectedDateString", selectedDateString);
-            console.log("is same date", isSameDate);
-            console.log("isFull",isFull)
 
             return (
                 hourValue >= startHour &&
@@ -311,18 +287,14 @@ const JoinMeet = () => {
 
     useEffect(() => {
       if(untilDateOkState){
-        console.log("untilDateOkState",untilDateOkState.seconds)
-        console.log("untilDateOk full date", formatDateFromStringTimestamp(untilDateOkState.seconds))
       }
     }, [untilDateOkState])    
 
     useEffect(() => {
-      console.log("Not formatted date",selectedDate)
       setFormattedDate(formatDate(selectedDate));
     }, [selectedDate])
 
     useEffect(() => {
-      console.log("formattedDate",formattedDate)
     }, [formattedDate])
 
     const getHour = (time) => {
@@ -337,7 +309,6 @@ const JoinMeet = () => {
       const formattedToday = today.toISOString().split('T')[0];
       const dateToCheck = formatTimestampToDate(untilDateOkState.seconds);
       const formattedDateToCheck = new Date(dateToCheck);
-      console.log("today:", formattedToday, "dateToCheck:", untilDateOkState);
       if (formattedDateToCheck <= today) {
           setUntilDateOkValid(false);
       } else {
@@ -358,15 +329,11 @@ const JoinMeet = () => {
             }
         });
 
-        console.log("Eşleşen dokümanlar:", matchingDocs.length);
         if(matchingDocs.length >= usersMaxValue){
-          console.log(matchingDocs.length,">=",usersMaxValue)
           setUsersValueOk(false)
-          console.log("red")
         }
         else{
           setUsersValueOk(true)
-          console.log("kabul")
         }
         setUserListData(matchingDocs);
         setLoading(false);
@@ -410,10 +377,8 @@ useEffect(() => {
 
       useEffect(() => {
         const fetchData = async () => {
-            console.log(meetInfoStartTime, meetInfoEndTime);
             await getBusyTimeMeets(); 
             await getMeetsForExcluding(); 
-            console.log("Running and rendering");
         };
 
         fetchData();
@@ -421,7 +386,6 @@ useEffect(() => {
 
 
       useEffect(() => {
-        console.log(selectedTime)
         setFilteredTime(getHour(selectedTime))
       }, [selectedTime])
 

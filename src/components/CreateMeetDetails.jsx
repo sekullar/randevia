@@ -83,9 +83,7 @@ const CreateMeetDetails = () => {
                     meetCode: updatedMeetCodes 
                 });
 
-                console.log("Meet code başarıyla güncellendi:", updatedMeetCodes);
             } else {
-                console.log("Kullanıcı belgesi bulunamadı!");
             }
         } catch (error) {
             console.error("Hata oluştu:", error);
@@ -102,11 +100,9 @@ const CreateMeetDetails = () => {
         try {
             await uploadBytes(storageRef, selectedFile);
             const downloadURL = await getDownloadURL(storageRef);
-            console.log("Dosya başarıyla yüklendi:", downloadURL);
             setIsFileUploaded(true); 
             return downloadURL;
         } catch (error) {
-            console.error("Dosya yükleme hatası:", error);
             toast.error("Dosya yüklenirken bir hata oluştu.");
         }
     };
@@ -229,16 +225,7 @@ const CreateMeetDetails = () => {
         { value: "23:00", label: "23:00" },
     ];
 
-    useEffect(() => {
-        console.log(meetStart);
-        console.log(meetEnd);
-        console.log(timeStart);
-        console.log(timeEnd);
-    }, [meetStart, meetEnd, timeStart, timeEnd]);
 
-    useEffect(() => {
-        console.log(selectedFile);
-    }, [selectedFile]);
 
 
     const handleCopy = () => {

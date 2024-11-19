@@ -42,8 +42,8 @@ const PopupMeet = () => {
     // SAAT KISITLAMASI BİTTİ
 
     useEffect(() => {
-        console.log("nfx selectedTime",selectedTime)
-    }, [selectedTime])
+        console.log(meetData)
+    }, [meetData])
 
     const makeRezervation = () => {
         updateOrCreateBusyTimeMeet(meetCode,selectedTime,formatDate(selectedDate))
@@ -96,10 +96,8 @@ const PopupMeet = () => {
                         const currentBusyTime = docSnap.data().busyTime || "";
                         const updatedBusyTime = `${currentBusyTime}${newBusyTimeData}`;
                         await setDoc(docRef, { busyTime: updatedBusyTime }, { merge: true });
-                        console.log(`Güncellendi: ${updatedBusyTime}`);
                     } else {
                         await setDoc(docRef, { busyTime: newBusyTimeData });
-                        console.log(`Oluşturuldu: ${newBusyTimeData}`);
                     }
                 
                     const meetsOkDocRef = doc(db, "meetsOk", `guest-${name}`);
@@ -113,7 +111,6 @@ const PopupMeet = () => {
                         uid: "guest-nouid"
                         };
                         await setDoc(meetsOkDocRef, newMeetData);
-                        console.log(`Yeni belge oluşturuldu: ${JSON.stringify(newMeetData)}`);
                     } else {
                         const currentBusyTime = meetsSnap.data().busyTime || "";
                         const updatedBusyTime = `${currentBusyTime}//${filteredTime}`;
@@ -128,7 +125,6 @@ const PopupMeet = () => {
                         },
                         { merge: true }
                         );
-                        console.log(`Güncellendi: busyTime=${updatedBusyTime}, rezerationFor=${updatedReservationFor}`);
                     }
                 
                     toast.dismiss();
@@ -144,12 +140,11 @@ const PopupMeet = () => {
 
     const getMeetInfo = async () => {
         const actualMeetCode = meetCode.startsWith("allShow-") ? meetCode.split("-").pop() : meetCode;
-        console.log(actualMeetCode);
         try {
             const meetRef = doc(db, "meets", actualMeetCode);
             const meetSnap = await getDoc(meetRef);
-            console.log(meetSnap.data());
             setMeetData(meetSnap.data());
+            console.log(meetData)
             setLoading(false);
         } catch (error) {
             toast.error("Veriler çekilirken bir hata oluştu");
@@ -177,11 +172,9 @@ const PopupMeet = () => {
         
             if (docSnap.exists()) {
               const data = docSnap.data();
-              console.log("Veri başarıyla çekildi:", data);
               setBusyTimeMeets(data);
               return data; 
             } else {
-              console.log("Belirtilen meetCode dokümanı bulunamadı.");
               return null;
             }
           } catch (error) {
@@ -194,7 +187,6 @@ const PopupMeet = () => {
       }
       
       const convertLongTimetoymd = (rawDate) => {
-        console.log("convertLongTimetoymd - gelen rawDate:", rawDate);
     
         if (!rawDate || typeof rawDate !== "string") {
             console.error("Geçersiz tarih formatı:", rawDate);
@@ -202,10 +194,8 @@ const PopupMeet = () => {
         }
     
         const [dateString] = rawDate.split("==FOR==");
-        console.log("convertLongTimetoymd - tarih stringi:", dateString);
     
         const date = new Date(dateString);
-        console.log("convertLongTimetoymd - tarih objesi:", date);
     
         if (isNaN(date.getTime())) {
             console.error("Geçersiz tarih:", dateString);
@@ -217,19 +207,16 @@ const PopupMeet = () => {
         const day = String(date.getDate()).padStart(2, '0');
     
         const formattedDate = `${year}-${month}-${day}`;
-        console.log("convertLongTimetoymd - formatlı tarih:", formattedDate);
     
         return formattedDate;
     };
     
     useEffect(() => {
-        console.log("busyTimeMeets",busyTimeMeets)
     }, busyTimeMeets)
 
     const extractFirstPart = (rawDate) => {
         if (rawDate && typeof rawDate === 'string') {
             const firstPart = rawDate.split('==')[0];
-            console.log(firstPart)
             setFillCount(firstPart)
             return firstPart;
         }
@@ -243,7 +230,6 @@ const PopupMeet = () => {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
         const day = date.getDate().toString().padStart(2, '0'); 
-        console.log(`${year}-${month}-${day}`)
         return `${year}-${month}-${day}`; 
     }
 
@@ -256,11 +242,10 @@ const PopupMeet = () => {
     const checkIfFull = (fillCount) => {
         if (!fillCount) return false; 
         const [currentCount, maxCount] = fillCount.split("/").map(Number); 
-        console.log("Bu sol değer ", currentCount," bu maks değer ", maxCount)
-        console.log ("o zaman??",currentCount >= maxCount);
         return currentCount >= maxCount;
     };
     
+
 
     useEffect(() => {
         const allOptions = [
@@ -290,16 +275,18 @@ const PopupMeet = () => {
             { value: "23:00", label: "23:00" },
         ];
     
-
         const startHour = meetData?.meetTimeStart;
         const endHour = meetData?.meetTimeEnd;
-        const excludingTimes = excludingTime || []; 
+        const excludingTimes = excludingTime || [];
+    
+        
     
         if (startHour && endHour) {
             const start = new Date(`1970-01-01T${startHour}:00`);
             const end = new Date(`1970-01-01T${endHour}:00`);
     
             const filteredOptions = allOptions.filter(option => {
+                
                 const optionTime = new Date(`1970-01-01T${option.value}:00`);
     
                 const isExcluded = excludingTimes.includes(option.value);
@@ -310,66 +297,60 @@ const PopupMeet = () => {
     
                 return optionTime >= start && optionTime <= end;
             });
-            console.log(filteredOptions)
-            if(meetData != null && busyTimeMeets !== undefined){
-                console.log("busy time meets undefined mı?", busyTimeMeets)
-                console.log("meetData status",meetData)
+
+            if (
+                meetData?.excludingCount === "null" || 
+                meetData?.excludingDate === "null" || 
+                meetData?.excludingDayDate === null || 
+                meetData?.excludingFillCount === "null" ||
+                meetData?.excludingTime === null
+            ) {
+                setClockOptions(filteredOptions); 
+                return;
+            }
+    
+            if (meetData != null && busyTimeMeets !== undefined) {
                 const excludingApplyOptions = filteredOptions.filter(option => {
-                    console.log("check if full",checkIfFull(fillCount))
-                    console.log("meetData excluding date",meetData.excludingDate)
-                    console.log("formatDate selected date falan filan", formatDate(selectedDate) === formatDate(meetData?.excludingDate))
-                    console.log("control 1", formatDate(selectedDate));
-                    console.log("control 2", meetData.excludingDate ? convertLongTimetoymd(meetData.excludingDate) : "Veri henüz gelmedi");
                     if (
                         meetData?.excludingDate && 
                         checkIfFull(fillCount) && 
                         formatDate(selectedDate) === convertLongTimetoymd(meetData.excludingDate)
                     ) {
-                        console.log("Tarih kontrolü başarılı");
-                    
                         if (excludingTimes.includes(option.value)) {
-                            console.log("Saat dilimi kapalı");
                             return false;
                         }
                     }
                     return true;
                 });
+    
                 const timeExcludingFilter = excludingApplyOptions.filter(option => {
                     const parsedData = busyTimeMeets.busyTime.split("//");
                     const splitData = parsedData.map(item => item.split("="));
-                    console.log("split data", splitData);
-                
-                    // Tarih ve saat filtrelemesi
+    
                     const isExcluded = splitData.some(([time, , date]) => {
                         if (date === formatDate(selectedDate) && time === option.value) {
-                            console.log(`Saat ${time} ve tarih ${formatDate(selectedDate)} eşleşiyor, bu saat filtrelenecek.`);
-                            return true; // Bu saat filtrelenecek
+                            return true; 
                         }
-                        return false; // Saat listede kalabilir
+                        return false; 
                     });
-                
-                    return !isExcluded; // isExcluded true ise filtrelenecek
+    
+                    return !isExcluded; 
                 });
-                
-                // Saat seçeneklerini güncelle
+    
                 setClockOptions(timeExcludingFilter);
-                
-                
             }
         }
-        
-
     
-        console.log(convertLongTimetoymd(meetData?.excludingDate));
         setExcludingTime(meetData?.excludingTime);
         setExcludingFillCountState(extractFirstPart(meetData?.excludingFillCount));
     }, [selectedDate, meetData]);
+    
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
       
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Aylar 0-11 arasında olduğu için +1 ekledik
+        const month = String(date.getMonth() + 1).padStart(2, '0'); 
         const day = String(date.getDate()).padStart(2, '0');
       
         return `${year}-${month}-${day}`;
@@ -380,20 +361,15 @@ const PopupMeet = () => {
     
       const handleTimeChange = (selectedOption) => {
         setSelectedTime(selectedOption);
-        console.log("Seçilen Saat:", selectedOption);
       };
     
     useEffect(() => {
-        console.log("selected date",selectedDate)
-        console.log("filtered date", formatDate(selectedDate))
     }, [selectedDate])
 
     useEffect(() => {
-        console.log(meetData)
     }, [meetData])
 
     useEffect(() => {
-        console.log("selected time",selectedTime)
     }, [selectedTime])
 
     const customStyles = {
@@ -462,17 +438,19 @@ const PopupMeet = () => {
                                 <DatePicker 
                                     locale={tr} 
                                     selected={selectedDate}  
-                                    minDate={convertTimestampToDate(meetData.meetStartDate.seconds)}
-                                    maxDate={convertTimestampToDate(meetData.meetEndDate.seconds)}
-                                    excludeDates={[convertTimestampToDate(meetData.excludingDayDate.seconds)]} 
+                                    minDate={meetData.meetStartDate?.seconds ? convertTimestampToDate(meetData.meetStartDate.seconds) : undefined}
+                                    maxDate={meetData.meetEndDate?.seconds ? convertTimestampToDate(meetData.meetEndDate.seconds) : undefined}
+                                    excludeDates={
+                                        meetData.excludingDayDate?.seconds
+                                        ? [convertTimestampToDate(meetData.excludingDayDate.seconds)]
+                                        : []
+                                    }
                                     onChange={(date) => {
-                                        console.log("Seçilen Tarih:", date);
                                         setSelectedDate(date);
                                     }} 
                                     className="shadow-2xl " 
                                     open={true} 
                                 />
-
                                 </div>
                                 <div className={`transition-all duration-500 ease-in-out ${selectedDate ? "opacity-100 " : "opacity-0"}`}>
                                     <Select options={clockOptions} onChange={(e) => handleTimeChange(e)}/>

@@ -42,14 +42,12 @@ const Login = () => {
                 
                 const user = await register(registerEmail,registerPassword, registerUsername, "member", "no-meetcode")
                 if(user){
-                    console.log(user)
                     setCookie("uid", user.uid,{path: "/", expires: inOneYear})
                     setLoginPage(true)
                 }
             }
             catch(error){
                 toast.error("Lütfen başka bir kullanıcı adı ve e-posta adresiyle tekrar deneyin.")
-                console.log(error)
             }
             
         }
@@ -62,7 +60,6 @@ const Login = () => {
         e.preventDefault();
         try{
             const user = await login(loginMail,loginPassword)
-            console.log(user)
             setCookie("uid", user.uid, {path: "/", expires: inOneYear})
             navigate("/home")
         }
@@ -86,7 +83,6 @@ const Login = () => {
     }
 
     useEffect(() => {
-        console.log(meetCreatorCheck)
     }, [meetCreatorCheck])
     
 

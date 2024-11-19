@@ -46,11 +46,9 @@ const AccountSettings = () => {
               meetCode: updatedMeetCode
             });
             toast.dismiss();
-            console.log("meetCode başarıyla güncellendi:", updatedMeetCode);
             toast.success("Toplantı Kodunuz başarıyla güncellendi")
             navigate("/home")
           } else {
-            console.log("Belirtilen kullanıcı dokümanı bulunamadı.");
             toast.error("Toplantı Kodu eklenecek kullanıcı yok (Giriş yapılmamış olabilir)")
             navigate("/login")
           }

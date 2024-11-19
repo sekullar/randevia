@@ -22,7 +22,6 @@ const Home = () => {
     const [meetDataState,setMeetDataState] = useState([]);
 
     useEffect(() => {
-            console.log("userDataSwip",userDataSwip)
             if(userDataSwip){
                 setUserMeetCodeSwip(userDataSwip.meetCode)
             }
@@ -37,7 +36,6 @@ const Home = () => {
             if (userSnapshot.exists()) {
                 const userData = userSnapshot.data();
                 setUserData(userData);
-                console.log(userData);
                 setUserDataSwip(userData); 
             } else {
                 toast.error("Kullanıcı bulunamadı.");
@@ -68,7 +66,6 @@ const Home = () => {
             }));
     
             if (meetData.length > 0) {
-                console.log(meetData);
                 setMeetDataState(meetData); 
                 setMeetDataSwip(meetData);   
             } else {

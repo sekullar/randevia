@@ -67,13 +67,11 @@ const ListMeetUsers = () => {
             return;
           }
       
-          console.log(meetCode);
           const iFrameMeetsRef = doc(db, "iFrameMeets", meetCode);
           const meetsCollectionRef = collection(iFrameMeetsRef, "meets");
       
           const querySnapshot = await getDocs(meetsCollectionRef);
           if (querySnapshot.empty) {
-            console.log("Veri bulunamadı");
             return;
           }
       
@@ -82,7 +80,6 @@ const ListMeetUsers = () => {
             ...doc.data()
           }));
       
-          console.log("listUsers", meetsData);
           setIframeUsers(meetsData);
           return meetsData;
       
@@ -118,7 +115,6 @@ const ListMeetUsers = () => {
     
       useEffect(() => {
          setFilteredMeetCreated(isoFormatDate(iframeMeetCreated))
-         console.log(isoFormatDate(iframeMeetCreated))
       }, [iframeMeetCreated])
 
     const fetchMeetCodeDocs = async (meetCode) => {
@@ -134,7 +130,6 @@ const ListMeetUsers = () => {
                 }
             });
     
-            console.log("Eşleşen dokümanlar:", matchingDocs);
             setListUsersData(matchingDocs);
             getiFrameMeets(meetCode)
             setLoading(false);

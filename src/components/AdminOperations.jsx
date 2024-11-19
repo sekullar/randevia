@@ -67,7 +67,6 @@ const AdminOperations = () => {
             
             if (userSnapshot.exists()) {
                 const userData = userSnapshot.data();
-                console.log(userData);
                 setUserRoleState(userData.role)
                 if(userData.role != "meetCreator"){
                     navigate("/404NotFound")
@@ -193,7 +192,6 @@ const AdminOperations = () => {
           const snapshot = await getDocs(usersRef);
           const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setUsersData(usersList)
-          console.log(usersList);
           setLoading(false);
         } catch (error) {
           console.error("Error fetching users:", error);
@@ -210,7 +208,6 @@ const AdminOperations = () => {
             const meetList = snapshot.docs.map(doc => ({id:doc.id, ...doc.data() }));
             setMeetDataState(meetList);
             setFilteredMeets(meetList); 
-            console.log(meetList);
             setLoading(false);
         }
         catch(error){
@@ -228,11 +225,9 @@ const AdminOperations = () => {
             meetCode: "no-meetcode"
           });
           toast.dismiss();
-          console.log("meetCode başarıyla 'no-meetcode' olarak güncellendi.");
           toast.success("Kişinin bütün toplantı kodları silindi.")
         } catch (error) {
           toast.error("Kişinin toplantı kodları silinirken bir hata oluştu.")
-          console.error("meetCode güncellenirken hata oluştu:", error);
         }
       };
 
@@ -241,13 +236,11 @@ const AdminOperations = () => {
             toast.loading("Yükleniyor...");
             const userDocRef = doc(db, "users", userId);
             await deleteDoc(userDocRef);
-            console.log("Kullanıcı belgesi Firestore'dan başarıyla silindi.");
             toast.dismiss();
             toast.success("Kullanıcı başarıyla silindi");
         } catch (error) {
             toast.dismiss();
             toast.error("Kullanıcı silinirken bir hata oluştu");
-            console.error("Kullanıcı silinirken hata oluştu:", error);
         }
     };
 
@@ -259,13 +252,11 @@ const AdminOperations = () => {
             const querySnapshot = await getDocs(q);
             querySnapshot.forEach(async (docSnapshot) => {
                 await deleteDoc(docSnapshot.ref);
-                console.log(`Belge ${docSnapshot.id} silindi.`);
             });
             toast.dismiss();
             toast.success("Toplantı başarıyla silindi");
         } catch (error) {
             toast.error("Toplantı silinirken hata oluştu")
-            console.error("Belge silinirken bir hata oluştu:", error);
         }
     };
     
@@ -314,10 +305,8 @@ const AdminOperations = () => {
             });
             toast.dismiss();
             toast.success("Yönetici olarak yapıldı");
-            console.log("Kullanıcının rolü başarıyla güncellendi!");
         } catch (error) {
             toast.error("Yönetici yapılırken hata oluştu!")
-            console.error("Kullanıcının rolü güncellenirken bir hata oluştu:", error);
         }
       }
 
@@ -337,7 +326,6 @@ const AdminOperations = () => {
             toast.dismiss();
             setNewMeetCode('');
             toast.success("Toplantı kodu eklendi");
-            console.log('MeetCode başarıyla güncellendi!');
         } catch (error) {
             toast.error("Toplantı kodu eklenirken hata oluştu");
             console.error('Hata: ', error);
