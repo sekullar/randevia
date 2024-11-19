@@ -1,5 +1,5 @@
 import Header from "../components/HomeComponents/Header"
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs,doc } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { DataContext } from "./Context/MainContext";
 import { db } from "../firebase/firebase"
@@ -18,7 +18,22 @@ const ListMeetUsers = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const { moveMeetCode } = useContext(DataContext);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState('name'); // Radyo butonunun varsayılan değeri
+    const [filterType, setFilterType] = useState('name'); 
+    const [iframeUsersOk,setIframeUsersOk] = useState(true);
+    const [iFrameUsers,setIframeUsers] = useState();
+    const [iFrameModal,setIframeModal] = useState(false)
+
+
+    const [iframeName,setIframeName] = useState("");
+    const [iframeMail,setIframeMail] = useState("");
+    const [iframeMeetCode,setIframeMeetCode] = useState("");
+    const [iframePhone,setIframePhone] = useState("");
+    const [iframeDateAt,setIframeDateAt] = useState("");
+    const [iframeSelectedTime,setIframeSelectedTime] = useState("");
+    const [iframeMeetCreated,setIframeMeetCreated] = useState("");
+
+    const [filteredMeetCreated,setFilteredMeetCreated] = useState("");
+
 
     const filteredUsers = listUsersData?.filter(user => {
         const userName = user.data.name.toLowerCase(); 
@@ -45,6 +60,67 @@ const ListMeetUsers = () => {
         }
     });
 
+    const getiFrameMeets = async (meetCode) => {
+        try {
+          if (!meetCode) {
+            console.error("meetCode değeri boş.");
+            return;
+          }
+      
+          console.log(meetCode);
+          const iFrameMeetsRef = doc(db, "iFrameMeets", meetCode);
+          const meetsCollectionRef = collection(iFrameMeetsRef, "meets");
+      
+          const querySnapshot = await getDocs(meetsCollectionRef);
+          if (querySnapshot.empty) {
+            console.log("Veri bulunamadı");
+            return;
+          }
+      
+          const meetsData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+      
+          console.log("listUsers", meetsData);
+          setIframeUsers(meetsData);
+          return meetsData;
+      
+        } catch (error) {
+          console.error("Hata oluştu: ", error);
+        }
+      };
+      
+      const isoFormatDate = (iframeMeetCreated) => {
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: false
+        };
+      
+        if (!iframeMeetCreated) {
+          return "Tarih bilgisi mevcut değil";
+        }
+      
+        const date = new Date(iframeMeetCreated);
+      
+        if (isNaN(date.getTime())) {
+          return "Geçersiz tarih";
+        }
+      
+        return date.toLocaleDateString('tr-TR', options).replace(/\./g, '');
+      };
+      
+      
+    
+      useEffect(() => {
+         setFilteredMeetCreated(isoFormatDate(iframeMeetCreated))
+         console.log(isoFormatDate(iframeMeetCreated))
+      }, [iframeMeetCreated])
+
     const fetchMeetCodeDocs = async (meetCode) => {
         setLoading(true);
         try {
@@ -60,6 +136,7 @@ const ListMeetUsers = () => {
     
             console.log("Eşleşen dokümanlar:", matchingDocs);
             setListUsersData(matchingDocs);
+            getiFrameMeets(meetCode)
             setLoading(false);
             return matchingDocs;
     
@@ -87,9 +164,23 @@ const ListMeetUsers = () => {
     useEffect(() => {
         fetchMeetCodeDocs(moveMeetCode);
     }, [moveMeetCode]);
+    
 
     return(
-        <>  
+        <>  <Modal style={customStyles} isOpen={iFrameModal}>
+                <div className="flex justify-end">
+                    <img src={Close} className="w-[35px]" onClick={() => setIframeModal(!iFrameModal)} alt="Close" />
+                </div>
+                <div className="flex flex-col">
+                    <p>İsim Soyisim: {iframeName}</p>
+                    <p>Mail Adresi: {iframeMail}</p>
+                    <p>Telefon Numarası: {iframePhone}</p>
+                    <p>Toplantı Kodu: {iframeMeetCode}</p>
+                    <p>Seçilen saat: {iframeSelectedTime}</p>
+                    <p>Seçilen Tarih: {iframeDateAt}</p>
+                    <p>Toplantı şu tarihte alındı: {filteredMeetCreated}</p>
+                </div>
+            </Modal>
             <Modal style={customStyles} isOpen={modalOpen}>
                 <div className="flex justify-end">
                     <img src={Close} className="w-[35px]" onClick={() => setModalOpen(!modalOpen)} alt="Close" />
@@ -114,6 +205,10 @@ const ListMeetUsers = () => {
             </div>
             <Header />
             <div className="flex items-center justify-around my-2">
+                <div className="flex items-center gap-3">
+                    <input type="checkbox" className="w-[20px] h-[20px] transition-all duration-300 outline-0" checked={iframeUsersOk} onChange={(e) => setIframeUsersOk(e.target.checked)} id="vehicle2" name="vehicle2" value="Car" />
+                    <p>iFrame'den gelenleri listele</p>
+                </div>
                 <input 
                     type="text" 
                     value={searchTerm} 
@@ -139,6 +234,24 @@ const ListMeetUsers = () => {
                         <p className="inter-500">User ID</p>
                     </div>
                 </div>
+                {iframeUsersOk ? 
+                (iFrameUsers && Array.isArray(iFrameUsers) ? 
+                    iFrameUsers.map((user, key) => {
+                        return(
+                            <div className="border-b flex items-center py-2 px-3" key={key}>
+                                <div className="w-1/3 flex justify-center">
+                                    <p>{user.name}</p>
+                                </div>
+                                <div className="w-1/3 flex justify-center">
+                                    <p>{user.selectedTime.value} - {user.meetDate}</p>
+                                </div>
+                                <div className="w-1/3 flex justify-center">
+                                    <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-4 py-2 rounded-lg inter-500 text-white outline-0" onClick={() => {setIframeName(user.name); setIframeMail(user.mail); setIframeMeetCode(user.meetCode); setIframePhone(user.phoneNumber); setIframeDateAt(user.meetDate); setIframeSelectedTime(user.selectedTime.value); setIframeMeetCreated(user.dateAt); setIframeModal(!iFrameModal) }}>iFrame</button>
+                                </div>
+                            </div>
+                        );
+                    }) : null
+                ) : ""}
                 {filteredUsers?.map((user, key) => {
                     const busyTimes = user.data.busyTime.split('//'); 
                     const rezervationDates = user.data.rezervationFor.split('//'); 

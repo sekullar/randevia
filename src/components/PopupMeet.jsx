@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../firebase/firebase";
-import { getDoc, doc } from "firebase/firestore";
+import { getDoc, doc, setDoc,collection } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { tr } from 'date-fns/locale'; 
 import Select from 'react-select';
+import Close from "../images/mingcute--close-fill.svg"
 import DatePicker from "react-datepicker"; 
+import Modal from 'react-modal';
+import Ok from "../images/okey.svg"
+import { v4 as uuidv4 } from "uuid";
 import "../css/popupMeet.css"
 import "../css/loader.css";
 
@@ -14,18 +18,129 @@ const PopupMeet = () => {
     const queryParams = new URLSearchParams(location.search);
     const meetCode = queryParams.get("meetCode");
 
+    const navigate = useNavigate();
+
+    const [name,setName] = useState("");
+    const [mail,setMail] = useState("");
+    const [phone,setPhone] = useState("");
+
+    const [meetOkStatus,setMeetOkStatus] = useState(false);
 
     const [meetData, setMeetData] = useState(null); 
     const [loading, setLoading] = useState(true);
     const [selectedDate,setSelectedDate] = useState(null);
     const [clockOptions,setClockOptions] = useState("");
     const [fillCount,setFillCount] = useState();
+    const [selectedTime,setSelectedTime] = useState();
+    const [modalOpen,setModalOpen] = useState(false);
+    const [busyTimeMeets,setBusyTimeMeets] = useState();
 
     // SAAT KISITLAMASI
     const [excludingDateState,setExcludingDateState] = useState();
     const [excludingTime,setExcludingTime] = useState("");
     const [excludingFillCountState,setExcludingFillCountState] = useState();
     // SAAT KISITLAMASI BİTTİ
+
+    useEffect(() => {
+        console.log("nfx selectedTime",selectedTime)
+    }, [selectedTime])
+
+    const makeRezervation = () => {
+        updateOrCreateBusyTimeMeet(meetCode,selectedTime,formatDate(selectedDate))
+    }
+
+    const addMeetData = async (meetCode) => {
+        try {
+            const docRef = doc(db, "iFrameMeets", meetCode);
+
+            const meetCollectionRef = collection(docRef, "meets");
+
+            const randomDocId = uuidv4();
+
+            const meetDocRef = doc(meetCollectionRef, randomDocId);
+
+            const data = {
+            name: name,
+            mail: mail,
+            phoneNumber: phone,
+            selectedTime: selectedTime,
+            meetDate: formatDate(selectedDate),
+            dateAt: new Date().toISOString(),
+            meetCode: meetCode,
+            };
+
+            await setDoc(meetDocRef, data);
+        } catch (error) {
+          console.error("Veri eklenirken hata oluştu: ", error);
+        }
+      };
+
+    const updateOrCreateBusyTimeMeet = async (meetCode, filteredTime, selectedDate) => {
+        const docRef = doc(db, "busyTimeMeets", meetCode);
+    
+        try {
+          if(selectedDate == "1970-01-01"){
+            toast.error("Lütfen tarih seçiniz!")
+          }
+          else{
+            if(selectedTime == undefined){
+                toast.error("Lütfen saat seçiniz!")
+            }
+            else{
+                    toast.loading("Randevunuz ekleniyor...");
+                    const docSnap = await getDoc(docRef);
+                    addMeetData(meetCode)
+                    const newBusyTimeData = `//${filteredTime.value}=FOR=${selectedDate}`;
+                
+                    if (docSnap.exists()) {
+                        const currentBusyTime = docSnap.data().busyTime || "";
+                        const updatedBusyTime = `${currentBusyTime}${newBusyTimeData}`;
+                        await setDoc(docRef, { busyTime: updatedBusyTime }, { merge: true });
+                        console.log(`Güncellendi: ${updatedBusyTime}`);
+                    } else {
+                        await setDoc(docRef, { busyTime: newBusyTimeData });
+                        console.log(`Oluşturuldu: ${newBusyTimeData}`);
+                    }
+                
+                    const meetsOkDocRef = doc(db, "meetsOk", `guest-${name}`);
+                    const meetsSnap = await getDoc(meetsOkDocRef);
+                
+                    if (!meetsSnap.exists()) {
+                        const newMeetData = {
+                        busyTime: filteredTime,
+                        name: `guest-${name}`,
+                        rezervationFor: selectedDate,
+                        uid: "guest-nouid"
+                        };
+                        await setDoc(meetsOkDocRef, newMeetData);
+                        console.log(`Yeni belge oluşturuldu: ${JSON.stringify(newMeetData)}`);
+                    } else {
+                        const currentBusyTime = meetsSnap.data().busyTime || "";
+                        const updatedBusyTime = `${currentBusyTime}//${filteredTime}`;
+                
+                        const currentReservationFor = meetsSnap.data().rezerationFor || "";
+                        const updatedReservationFor = `${currentReservationFor}//${selectedDate}`;
+                
+                        await setDoc(meetsOkDocRef,
+                        {
+                            busyTime: updatedBusyTime,
+                            rezerationFor: updatedReservationFor
+                        },
+                        { merge: true }
+                        );
+                        console.log(`Güncellendi: busyTime=${updatedBusyTime}, rezerationFor=${updatedReservationFor}`);
+                    }
+                
+                    toast.dismiss();
+                    toast.success("Randevunuz başarıyla eklendi");
+                    setMeetOkStatus(true)
+            }
+          }
+        } catch (error) {
+          console.error("Güncelleme veya oluşturma hatası:", error);
+          toast.error("Randevunuz eklenirken hata oluştu");
+        }
+      };
 
     const getMeetInfo = async () => {
         const actualMeetCode = meetCode.startsWith("allShow-") ? meetCode.split("-").pop() : meetCode;
@@ -53,6 +168,26 @@ const PopupMeet = () => {
 
         return formattedDate;
     };
+
+    const fetchBusyTimeMeets = async (meetCode) => {
+        try {
+            const docRef = doc(db, "busyTimeMeets", meetCode);
+        
+            const docSnap = await getDoc(docRef);
+        
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              console.log("Veri başarıyla çekildi:", data);
+              setBusyTimeMeets(data);
+              return data; 
+            } else {
+              console.log("Belirtilen meetCode dokümanı bulunamadı.");
+              return null;
+            }
+          } catch (error) {
+            console.error("Veri çekilirken hata oluştu:", error);
+          }
+    }
 
     const convertTimestampToDate = (timestamp) => {
         return new Date(timestamp * 1000); 
@@ -87,9 +222,9 @@ const PopupMeet = () => {
         return formattedDate;
     };
     
-    
-
-    
+    useEffect(() => {
+        console.log("busyTimeMeets",busyTimeMeets)
+    }, busyTimeMeets)
 
     const extractFirstPart = (rawDate) => {
         if (rawDate && typeof rawDate === 'string') {
@@ -115,6 +250,7 @@ const PopupMeet = () => {
 
     useEffect(() => {
         getMeetInfo();
+        fetchBusyTimeMeets(meetCode);
     }, []);
 
     const checkIfFull = (fillCount) => {
@@ -154,6 +290,7 @@ const PopupMeet = () => {
             { value: "23:00", label: "23:00" },
         ];
     
+
         const startHour = meetData?.meetTimeStart;
         const endHour = meetData?.meetTimeEnd;
         const excludingTimes = excludingTime || []; 
@@ -174,7 +311,8 @@ const PopupMeet = () => {
                 return optionTime >= start && optionTime <= end;
             });
             console.log(filteredOptions)
-            if(meetData != null){
+            if(meetData != null && busyTimeMeets !== undefined){
+                console.log("busy time meets undefined mı?", busyTimeMeets)
                 console.log("meetData status",meetData)
                 const excludingApplyOptions = filteredOptions.filter(option => {
                     console.log("check if full",checkIfFull(fillCount))
@@ -183,7 +321,7 @@ const PopupMeet = () => {
                     console.log("control 1", formatDate(selectedDate));
                     console.log("control 2", meetData.excludingDate ? convertLongTimetoymd(meetData.excludingDate) : "Veri henüz gelmedi");
                     if (
-                        meetData?.excludingDate && // Veri geldi mi kontrolü
+                        meetData?.excludingDate && 
                         checkIfFull(fillCount) && 
                         formatDate(selectedDate) === convertLongTimetoymd(meetData.excludingDate)
                     ) {
@@ -196,13 +334,31 @@ const PopupMeet = () => {
                     }
                     return true;
                 });
+                const timeExcludingFilter = excludingApplyOptions.filter(option => {
+                    const parsedData = busyTimeMeets.busyTime.split("//");
+                    const splitData = parsedData.map(item => item.split("="));
+                    console.log("split data", splitData);
                 
-    
-                setClockOptions(excludingApplyOptions);   
+                    // Tarih ve saat filtrelemesi
+                    const isExcluded = splitData.some(([time, , date]) => {
+                        if (date === formatDate(selectedDate) && time === option.value) {
+                            console.log(`Saat ${time} ve tarih ${formatDate(selectedDate)} eşleşiyor, bu saat filtrelenecek.`);
+                            return true; // Bu saat filtrelenecek
+                        }
+                        return false; // Saat listede kalabilir
+                    });
+                
+                    return !isExcluded; // isExcluded true ise filtrelenecek
+                });
+                
+                // Saat seçeneklerini güncelle
+                setClockOptions(timeExcludingFilter);
+                
+                
             }
         }
+        
 
-        // VERİTABANINDAN AYIN 9 UNDA GELİRSE CONVERT LONGTIMETOYMD ONU BIR GUN EKSIK VERİYOR
     
         console.log(convertLongTimetoymd(meetData?.excludingDate));
         setExcludingTime(meetData?.excludingTime);
@@ -222,6 +378,10 @@ const PopupMeet = () => {
       
       
     
+      const handleTimeChange = (selectedOption) => {
+        setSelectedTime(selectedOption);
+        console.log("Seçilen Saat:", selectedOption);
+      };
     
     useEffect(() => {
         console.log("selected date",selectedDate)
@@ -232,8 +392,50 @@ const PopupMeet = () => {
         console.log(meetData)
     }, [meetData])
 
+    useEffect(() => {
+        console.log("selected time",selectedTime)
+    }, [selectedTime])
+
+    const customStyles = {
+        content: {
+          top: '50%',
+          left: '50%',
+          right: 'auto',
+          bottom: 'auto',
+          marginRight: '-50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: "8px",
+          overflow: "hidden"
+        },
+    };
+
     return (
-        <>  <div className="bg-bg-2 h-screen">
+        <>  
+            <div className={`${meetOkStatus ? "ok z-50" : "hidden"} w-screen fixed h-screen bg-white flex flex-col items-center justify-center`}>
+                <img src={Ok} alt="Ok" className="w-[150px]"/>
+                <p className="text-green-700 inter-600 text-2xl">Randevunuz başarıyla alındı!</p>
+            </div>
+            <Modal style={customStyles} isOpen={modalOpen}>
+                <div className="flex justify-end">
+                    <img src={Close} className="w-[35px]" onClick={() => setModalOpen(!modalOpen)} alt="Close" />
+                </div>
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col">
+                        <p className="mb-2">İsim soyisim</p>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="border p-1 rounded-lg outline-0 focus:border-sky-600 transition-all ps-2" placeholder="İsminiz soyisminiz"/>
+                    </div>
+                    <div className="flex flex-col">
+                        <p className="mb-2">Cep telefonu numarası</p>
+                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="border p-1 rounded-lg outline-0 focus:border-sky-600 transition-all ps-2" placeholder="Cep telefonu numaranız"/>
+                    </div>
+                    <div className="flex flex-col">
+                        <p className="mb-2">E-Posta adresi</p>
+                        <input type="text" value={mail} onChange={(e) => setMail(e.target.value)} className="border p-1 rounded-lg outline-0 focus:border-sky-600 transition-all  ps-2" placeholder="E-Posta adresiniz"/>
+                    </div>
+                </div>
+                <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-4 py-2 rounded-lg inter-500 text-white mt-4 outline-0" onClick={() => makeRezervation()}>Rezervasyon yap</button>
+            </Modal>
+            <div className="bg-bg-2 h-screen">
                 <div className="backdrop-blur-md h-full">   
                     <div className={`${loading ? "h-full w-screen fixed justify-center flex items-center  z-40" : "hidden"}`}>
                         <div className="loader"></div>
@@ -273,7 +475,10 @@ const PopupMeet = () => {
 
                                 </div>
                                 <div className={`transition-all duration-500 ease-in-out ${selectedDate ? "opacity-100 " : "opacity-0"}`}>
-                                    <Select options={clockOptions}/>
+                                    <Select options={clockOptions} onChange={(e) => handleTimeChange(e)}/>
+                                </div>
+                                <div className={`${selectedDate != null && selectedTime != undefined ? "isOk opacity-100" : "opacity-0"} transition-all duration-300`}>
+                                    <button className="bg-sky-500 hover:bg-sky-600 transition-all duration-300 px-4 py-2 rounded-lg text-white inter-500 mt-4 outline-0" onClick={() => setModalOpen(!modalOpen)}>Rezervasyon yap</button>
                                 </div>
                             </div>
                         </div>

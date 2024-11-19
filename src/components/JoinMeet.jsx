@@ -126,61 +126,61 @@ const JoinMeet = () => {
       return Array.from(new Set(unavailableHours)); 
     };
     
-    const updateOrCreateBusyTimeMeet = async (meetCode, filteredTime, selectedDate) => {
-      const docRef = doc(db, "busyTimeMeets", meetCode);
-  
-      try {
-          toast.loading("Randevunuz ekleniyor...");
-          const docSnap = await getDoc(docRef);
-  
-          const newBusyTimeData = `//${filteredTime}=FOR=${selectedDate}`;
-  
-          if (docSnap.exists()) {
-              const currentBusyTime = docSnap.data().busyTime || ""; 
-              const updatedBusyTime = `${currentBusyTime}${newBusyTimeData}`; 
-              await setDoc(docRef, { busyTime: updatedBusyTime }, { merge: true });
-              console.log(`Güncellendi: ${updatedBusyTime}`);
-          } else {
-              await setDoc(docRef, { busyTime: newBusyTimeData });
-              console.log(`Oluşturuldu: ${newBusyTimeData}`);
-          }
-  
-          const meetsOkDocRef = doc(db, "meetsOk", `${cookies.uid}-${meetCodeSwip}`);
-          const meetsSnap = await getDoc(meetsOkDocRef);
-          
-          if (!meetsSnap.exists()) {
-              const newMeetData = {
-                  busyTime: filteredTime,  
-                  name: userDataSwip.username,
-                  rezervationFor: selectedDate,
-                  uid: cookies.uid
-              };
-              await setDoc(meetsOkDocRef, newMeetData);
-              console.log(`Yeni belge oluşturuldu: ${JSON.stringify(newMeetData)}`);
-          } else {
-              const currentBusyTime = meetsSnap.data().busyTime || "";
-              const updatedBusyTime = `${currentBusyTime}//${filteredTime}`;
-  
-              const currentReservationFor = meetsSnap.data().rezerationFor || "";
-              const updatedReservationFor = `${currentReservationFor}//${selectedDate}`;
-  
-              await setDoc(meetsOkDocRef, 
-                  { 
-                      busyTime: updatedBusyTime,
-                      rezerationFor: updatedReservationFor
-                  }, 
-                  { merge: true }
-              );
-              console.log(`Güncellendi: busyTime=${updatedBusyTime}, rezerationFor=${updatedReservationFor}`);
-          }
-  
-          toast.dismiss();
-          toast.success("Randevunuz başarıyla eklendi");
-          navigate("/home");
-      } catch (error) {
-          console.error("Güncelleme veya oluşturma hatası:", error);
-          toast.error("Randevunuz eklenirken hata oluştu");
+  const updateOrCreateBusyTimeMeet = async (meetCode, filteredTime, selectedDate) => {
+    const docRef = doc(db, "busyTimeMeets", meetCode);
+
+    try {
+      toast.loading("Randevunuz ekleniyor...");
+      const docSnap = await getDoc(docRef);
+
+      const newBusyTimeData = `//${filteredTime}=FOR=${selectedDate}`;
+
+      if (docSnap.exists()) {
+        const currentBusyTime = docSnap.data().busyTime || "";
+        const updatedBusyTime = `${currentBusyTime}${newBusyTimeData}`;
+        await setDoc(docRef, { busyTime: updatedBusyTime }, { merge: true });
+        console.log(`Güncellendi: ${updatedBusyTime}`);
+      } else {
+        await setDoc(docRef, { busyTime: newBusyTimeData });
+        console.log(`Oluşturuldu: ${newBusyTimeData}`);
       }
+
+      const meetsOkDocRef = doc(db, "meetsOk", `${cookies.uid}-${meetCodeSwip}`);
+      const meetsSnap = await getDoc(meetsOkDocRef);
+
+      if (!meetsSnap.exists()) {
+        const newMeetData = {
+          busyTime: filteredTime,
+          name: userDataSwip.username,
+          rezervationFor: selectedDate,
+          uid: cookies.uid
+        };
+        await setDoc(meetsOkDocRef, newMeetData);
+        console.log(`Yeni belge oluşturuldu: ${JSON.stringify(newMeetData)}`);
+      } else {
+        const currentBusyTime = meetsSnap.data().busyTime || "";
+        const updatedBusyTime = `${currentBusyTime}//${filteredTime}`;
+
+        const currentReservationFor = meetsSnap.data().rezerationFor || "";
+        const updatedReservationFor = `${currentReservationFor}//${selectedDate}`;
+
+        await setDoc(meetsOkDocRef,
+          {
+            busyTime: updatedBusyTime,
+            rezerationFor: updatedReservationFor
+          },
+          { merge: true }
+        );
+        console.log(`Güncellendi: busyTime=${updatedBusyTime}, rezerationFor=${updatedReservationFor}`);
+      }
+
+      toast.dismiss();
+      toast.success("Randevunuz başarıyla eklendi");
+      navigate("/home");
+    } catch (error) {
+      console.error("Güncelleme veya oluşturma hatası:", error);
+      toast.error("Randevunuz eklenirken hata oluştu");
+    }
   };
   
   useEffect(() => {
